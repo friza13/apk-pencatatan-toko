@@ -18,7 +18,8 @@ void main() {
     });
 
     test('keeps decimals only when currency scale requires it', () {
-      expect(formatMinor(10500, scale: 2), 'Rp10.500,00');
+      expect(formatMinor(10500, scale: 2), 'Rp105,00');
+      expect(formatMinor(125000, scale: 2), 'Rp1.250,00');
       expect(formatMinor(5, scale: 2), 'Rp0,05');
     });
   });
