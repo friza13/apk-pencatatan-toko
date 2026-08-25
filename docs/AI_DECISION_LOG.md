@@ -260,3 +260,42 @@ lib/
 | — | `.NotaKitbackup` / `.notakit` | Digantikan D-002 |
 | — | Merge langsung PURCHASE_PAYMENT→PAYMENT tanpa evaluasi | Ditunda oleh D-007 |
 | — | Isar/Hive sebagai DB utama | Tidak relational; D-006 |
+
+---
+
+## D-019 — Implementasi D-003: sqlite3mc via build-hook package:sqlite3 v3
+
+**Status:** SPIKE LULUS (2026-08-26, lihat `docs/SPIKE_REPORT.md`). Melengkapi D-003.
+
+**Context:** Rencana awal memakai `sqlcipher_flutter_libs`, tetapi spike menemukan kedua
+package `*_flutter_libs` sudah EOL no-op di era `package:sqlite3` v3.
+
+**Decision:**
+- Enkripsi DB at-rest = **SQLite3MultipleCiphers (sqlite3mc)**, SQLCipher-compatible,
+  AEAD ChaCha20-Poly1305, dipilih via pubspec:
+  `hooks.user_defines.sqlite3.source: sqlite3mc`.
+- Key diset via setup callback `NativeDatabase`: urutan wajib
+  `PRAGMA key → foreign_keys=ON → journal_mode=WAL → query pertama`.
+- Verifikasi enkripsi bersifat perilaku (header plaintext check + wrong-key rejection),
+  karena build mc ini tidak meng-compile `PRAGMA cipher_version`.
+
+**Reason:** Jalur resmi & maintained (penulis drift), tanpa dual-link ambiguity lama,
+tetap memenuhi amendment #2; bukan downgrade ke plaintext.
+
+**Trade-offs:** Tidak bisa probe capability via pragma; format file terikat sqlite3mc
+(kompatibilitas SQLCipher klasik tersedia bila diperlukan lewat pragma legacy).
+
+**Consequences:** P1 memakai pola executor dari spike; test header/wrong-key menjadi
+regression permanen; drift_dev di-pin 2.34.0 + larangan `textNullable()` (bug codegen).
+
+---
+
+## D-020 — Update D-004: iterasi PBKDF2 final sementara
+
+**Decision:** Default iterasi backup `.nkb` = **600.000** (PBKDF2-HMAC-SHA256, 256-bit key).
+Benchmark host debug VM: 100k≈454ms, 200k≈819ms, 400k≈1,614s, 600k≈2,4–2,8s,
+800k≈3,2–3,7s. Re-benchmark on-device saat P10; opsi akselerasi `cryptography_flutter`
+bila >5 detik di device mid-range. Parameter per-file di manifest → algorithm-agile.
+
+**Consequences:** Nilai TIDAK boleh hard-code di business logic; dibaca dari config
+default + ditulis ke manifest setiap backup; restore membaca parameter dari file.

@@ -368,3 +368,13 @@ Setiap checkpoint: `flutter analyze` ✓, `flutter test` ✓, `flutter build apk
 - Spec coverage: semua amendment #1–#20 terpetakan (D-001..D-018, G-01..G-12, C-01..C-06); fase P1–P13 akan mendapat detailed plan just-in-time sehingga coverage per-task diverifikasi saat itu (mencegah plan basi).
 - Placeholder scan: kode di atas adalah kerangka nyata; API drift/sqlcipher exact diverifikasi terhadap versi package saat eksekusi (dicatat eksplisit di S-1/S-6, bukan tebak-tebakan diam-diam).
 - Type consistency: `Result/Failure/ErrorCodes` dipakai konsisten mulai P2+; naming `_micro` untuk qty, integer minor untuk money.
+
+## Execution Log
+
+| Tanggal | Milestone | Hasil | Commit |
+|---|---|---|---|
+| 2026-08-26 | Task 0–2 (git init, docs, flutter create) | ✓ | `4a3dae8` |
+| 2026-08-26 | P0 Foundation + CHECKPOINT | analyze 0 issue • test 11/11 • apk debug ✓ | `34f4b8f` |
+| 2026-08-26 | SPIKE SQLCipher+Drift — **PASS** | 9/9 integration test @ emulator • KDF benchmark selesai → lihat `docs/SPIKE_REPORT.md`, keputusan D-019/D-020 | (commit spike) |
+
+**Status berikutnya: P1 Database schema v1 produksi.**
