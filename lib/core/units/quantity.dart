@@ -27,13 +27,14 @@ int toMicro(String decimal) {
   final fractionMicro = fraction.isEmpty
       ? 0
       : int.parse(fraction.padRight(_maxFractionDigits, '0'));
-  return sign * (whole * quantityScale + fractionMicro);}
+  return sign * (whole * quantityScale + fractionMicro);
+}
 
 /// Formats micro units back into a canonical decimal string without trailing
 /// zeros (e.g. `500000` → `0.5`, `2000000` → `2`).
 String microToDecimalString(int micro) {
   final negative = micro < 0;
-  var magnitude = negative ? -micro : micro;
+  final magnitude = negative ? -micro : micro;
 
   final whole = magnitude ~/ quantityScale;
   final fraction = magnitude % quantityScale;
