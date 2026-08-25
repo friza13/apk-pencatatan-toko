@@ -299,3 +299,37 @@ bila >5 detik di device mid-range. Parameter per-file di manifest → algorithm-
 
 **Consequences:** Nilai TIDAK boleh hard-code di business logic; dibaca dari config
 default + ditulis ke manifest setiap backup; restore membaca parameter dari file.
+
+---
+
+## D-021 — Delta schema v1 produksi vs NOTAKIT_ERD.md (transparansi penuh)
+
+**Context:** Amendment #6 melarang perubahan schema senyap. Daftar berikut adalah
+seluruh penyimpangan sadar dari ERD asli saat implementasi P1.
+
+| # | Delta | Alasan |
+|---|---|---|
+| 1 | `PURCHASE_PAYMENT` dihapus; digabung ke `Payments` generik (`purpose='purchase_payment'`, `direction='out'`) | D-007b |
+| 2 | `EXPENSE` dihapus; digantung ke `Payments` (`purpose='other_expense'`/`'other_income'` + kolom `category`) — satu jalur ledger | D-007b; FR-CASH-001 tetap terpenuhi |
+| 3 | `RECEIVABLE_PAYMENT.payment_id` non-null + RESTRICT | Alokasi tanpa payment tidak bermakna |
+| 4 | Semua tabel uang memakai suffix `_minor`; qty `_micro`; konversi satuan disimpan micro-scaled | D-008/D-011, tanpa float |
+| 5 | Timestamp = integer epoch-millis UTC via `EpochMillisUtcConverter` | D-012 |
+| 6 | Enum disimpan TEXT + CHECK constraint (bukan textEnum) agar format snake_case sesuai D-009 dan stabil untuk backup | Kontrol penuh atas nilai tersimpan |
+| 7 | `PRODUCT.sku`/`barcode` nullable + unique index `(business_id, sku/barcode)` | Banyak UMKM kecil tanpa kode; NULL tidak saling bentrok di unique index |
+| 8 | `PRODUCT` + cache stok: `stock_quantity_micro` (dan varian) — materialized dari movement ledger | G-01/D-014 |
+| 9 | `PRODUCT.cost_price_minor` = WAC berjalan per base unit; diperbarui saat purchase finalize | G-02/D-013 |
+| 10 | Berat/volume → integer: `weight_grams`, `volume_ml` | Hindari float; unit eksplisit |
+| 11 | `SALE.number` nullable (draft belum bernomor); unique index `(business_id, number)` | Draft tanpa nomor; finalisasi mengisi nomor sekuensial dalam transaction yang sama |
+| 12 | `SALE.status` enum baru D-009: draft/confirmed/paid/partially_paid/credit/voided (+ `finalized_at`,`voided_at`) | C-06 amendment #10; RETURNED direpresentasikan dokumen return |
+| 13 | `SALE_LINE` + snapshot lengkap amendment #7: `unit_id`, `qty_micro`, `conversion_factor_micro`, `qty_base_micro` | Sejarah imun terhadap perubahan master data |
+| 14 | `PAYMENT` + kolom `direction`,`purpose`,`counter_account_id`(transfer),`refund_of_payment_id`(self-ref),`category`; CHECK amount>0 | D-007b & amendment #14 (refund eksplisit ke akun) |
+| 15 | `STOCK_MOVEMENT.qty_base_micro` signed; `unit_cost_minor` snapshot; tipe movement sesuai SRS | D-014 |
+| 16 | `PURCHASE` + `other_cost_minor` (biaya masuk WAC), `voided_at`; `PURCHASE_LINE` + snapshot konversi | D-013 & amendment #7 |
+| 17 | `SALES_RETURN` + `refund_payment_id` nullable (tautan dokumen return → refund payment), `voided_at` | Amendment #14 |
+| 18 | Tabel tambahan vs ERD: `PurchaseReturns`+lines (schema-ready Phase 2) | C-04 diselesaikan dengan schema, tanpa UI MVP |
+| 19 | `APP_SETTING.value_json` (bukan value_json_encrypted): enkripsi nilai sensitif di application layer | Kunci per-value via secure storage (P3); nama kolom jujur |
+| 20 | `ACTIVITY_LOG.device_id` TEXT; `entity_id` TEXT | Fleksibilitas referensi non-integer |
+| 21 | Index ERD §15 diadaptasi ke nama kolom baru (@TableIndex) + unique keys per scope bisnis | Konsistensi index strategy |
+
+**Consequence:** Setiap delta di atas bersifat final untuk schema v1; backup `.nkb`
+menyimpan schema_version=1 terhadap struktur ini.
