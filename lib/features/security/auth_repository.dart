@@ -18,9 +18,10 @@ abstract final class SecureKeys {
 ///
 /// Security model D-022: the database key is random and Keystore-wrapped;
 /// the PIN verifier lives only as a salted PBKDF2 hash.
+// Private fields cannot be named parameters, so initializing formals are
+// impossible here; suppress the style lint for this repository class.
+// ignore_for_file: prefer_initializing_formals
 class AuthRepository {
-  // Private fields cannot use initializing formals with named parameters.
-  // ignore: prefer_initializing_formals
   AuthRepository({required AppDatabase db, required SecureStore secureStore})
       : _db = db,
         _secure = secureStore;
