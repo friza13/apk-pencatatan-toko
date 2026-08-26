@@ -382,4 +382,6 @@ Setiap checkpoint: `flutter analyze` ✓, `flutter test` ✓, `flutter build apk
 
 | 2026-08-26 | PIN fix (D-023) | PIN tepat 6 digit di semua flow; test diperbarui; APK reinstall | d93d10 |
 | 2026-08-26 | P4 Master data - **PASS** | Repo produk agregat+referensi+parties (9 tests) | UI list/search/filter/form/detail/arsip | Pelanggan/Supplier/Salesman/Referensi | Menu Lainnya nyata | 102 tests, apk ✓ | 1a28a40,ce7c67d |
-**Status berikutnya: CHECKPOINT P4 lapor ke owner -> P5 Inventory.**
+| 2026-08-26 | P5 Inventory - **PASS** | InventoryService atomik (opening/adjustment/opname + guard STOCK_INSUFFICIENT) | UI Stok + Kartu Stok via menu Lainnya | 110 tests, apk ✓, install emulator | 2c010c |
+
+**Status berikutnya: CHECKPOINT P5 lapor ke owner -> P6 Sales/Nota.**
