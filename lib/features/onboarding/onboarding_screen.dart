@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../security/providers.dart';
+import 'data/demo_data_seeder.dart';
+
 
 import '../security/auth_controller.dart';
 
@@ -21,7 +24,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pinConfirm = TextEditingController();
 
   int _step = 0;
-  int _dataChoice = 0;
+  int _dataChoice = 0; // 0=kosong, 1=demo
   bool _busy = false;
   String? _error;
 
@@ -52,11 +55,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _error = null;
     });
     try {
-      await ref.read(authControllerProvider.notifier).onboard(
-            ownerName: _ownerName.text.trim(),
-            businessName: _businessName.text.trim(),
-            pin: _pin.text,
-          );
+      final businessId = await ref.read(authControllerProvider.notifier).onboard(
+          ownerName: _ownerName.text.trim(),
+          businessName: _businessName.text.trim(),
+          pin: _pin.text);
+      if (_dataChoice == 1) {
+        final db = await ref.read(appDatabaseProvider.future);
+        await DemoDataSeeder(db).seed(businessId);
+      }
     } on ArgumentError catch (e) {
       setState(() {
         _busy = false;

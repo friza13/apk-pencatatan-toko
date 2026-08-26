@@ -66,6 +66,7 @@ void main() {
       saveToPath: '${tmp.path}/backup.nkb',
       password: 'rahasia123',
       schemaVersion: db.schemaVersion,
+      dbPassphrase: '',
       appVersion: appVersion,
       recordCounts: await counts(),
       dbKeyHex: 'aa' * 32,
@@ -81,7 +82,9 @@ void main() {
 
     final targetPath = '${tmp.path}/restored.db';
     await service.applyRestore(
-        preview: preview, targetDbPath: targetPath);
+        preview: preview,
+        targetDbPath: targetPath,
+        dbPassphrase: '');
 
     final restored = AppDatabase(NativeDatabase(File(targetPath)));
     try {
@@ -101,6 +104,7 @@ void main() {
       appVersion: appVersion,
       recordCounts: await counts(),
       dbKeyHex: 'bb' * 32,
+      dbPassphrase: '',
     );
 
     await expectLater(
@@ -130,6 +134,7 @@ void main() {
       appVersion: appVersion,
       recordCounts: await counts(),
       dbKeyHex: 'cc' * 32,
+      dbPassphrase: '',
     );
 
     final bytes = await nkb.readAsBytes();

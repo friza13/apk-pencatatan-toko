@@ -90,6 +90,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         appVersion: '1.0.0-dev',
         recordCounts: counts,
         dbKeyHex: await readDbKeyHex(),
+        dbPassphrase: await readDbKeyHex(),
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -155,7 +156,10 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
       final docs = await getDocsDir();
       await service.applyRestore(
-          preview: preview, targetDbPath: '$docs/notakit.db');
+        preview: preview,
+        targetDbPath: '$docs/notakit.db',
+        dbPassphrase: await readDbKeyHex(),
+      );
 
       // Buka ulang koneksi & muat ulang seluruh data.
       ref.invalidate(appDatabaseProvider);

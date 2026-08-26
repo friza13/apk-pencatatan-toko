@@ -26,6 +26,7 @@ class BackupService {
     required String appVersion,
     required Map<String, int> recordCounts,
     required String dbKeyHex,
+    required String dbPassphrase,
     int kdfIterations = BackupCrypto.defaultIterations,
   }) async {
     // Consistent snapshot via VACUUM INTO on the live connection.
@@ -139,12 +140,20 @@ class BackupService {
   Future<void> applyRestore({
     required RestorePreview preview,
     required String targetDbPath,
+    required String dbPassphrase,
   }) async {
     final staging =
         File('$targetDbPath.restore-${DateTime.now().millisecondsSinceEpoch}');
     await staging.writeAsBytes(preview.databaseBytes, flush: true);
 
-    final probe = AppDatabase(NativeDatabase(File(staging.path)));
+    final probe = AppDatabase(NativeDatabase(
+      File(staging.path),
+      // Passphrase kosong = database plain (unit test); produksi selalu
+      // mengirim kunci sqlcipher dari secure storage.
+      setup: dbPassphrase.isEmpty
+          ? null
+          : (rawDb) => rawDb.execute("PRAGMA key = '$dbPassphrase'"),
+    ));
     try {
       final okRow = await probe
           .customSelect('PRAGMA integrity_check')

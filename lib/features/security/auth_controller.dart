@@ -68,13 +68,13 @@ class AuthController extends AsyncNotifier<AuthState> {
       );
 
   /// Creates the owner/business and unlocks immediately.
-  Future<void> onboard({
+  Future<int> onboard({
     required String ownerName,
     required String businessName,
     required String pin,
   }) async {
     final repo = await _repo();
-    await repo.onboard(
+    final businessId = await repo.onboard(
         ownerName: ownerName, businessName: businessName, pin: pin);
     final current = state.value ??
         const AuthState(phase: AuthPhase.needsOnboarding);
@@ -82,6 +82,7 @@ class AuthController extends AsyncNotifier<AuthState> {
       phase: AuthPhase.unlocked,
       biometricEnabled: false,
     ));
+    return businessId;
   }
 
   Future<UnlockResult> unlockWithPin(String pin) async {
