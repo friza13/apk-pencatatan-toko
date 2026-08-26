@@ -378,5 +378,6 @@ Setiap checkpoint: `flutter analyze` ✓, `flutter test` ✓, `flutter build apk
 | 2026-08-26 | SPIKE SQLCipher+Drift — **PASS** | 9/9 integration test @ emulator • KDF benchmark selesai → lihat `docs/SPIKE_REPORT.md`, keputusan D-019/D-020 | `38f05e9` |
 | 2026-08-26 | P1 Database — **PASS** | Schema v1 (36 tabel) • DAO/constraint tests di host • analyze 0 • test 35+ pass • apk ✓ → delta terdokumentasi D-021 | `0df080a` |
 | 2026-08-26 | P2 Core domain — **PASS** | Qty, MoneyPolicy (D-011 penuh), PricingEngine (FR-PRICE-001), BusinessClock (D-012) • 41 domain tests hijau (total 76+) | `6edf686`,`648bcdf`,`81cada9` |
+| 2026-08-26 | P3 Auth & Store — **PASS** | Onboarding 3 langkah • PIN hash PBKDF2 injectable (D-022) • biometrik local_auth • DB key random Keystore-wrapped • LockScreen + router gate • 93 tests • apk ✓ | `ad368fc`→`c227a5f` |
 
-**Status berikutnya: CHECKPOINT P2 lapor ke owner → P3 Auth & Store.**
+**Status berikutnya: CHECKPOINT P3 lapor ke owner → P4 Master data.**
