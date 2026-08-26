@@ -51,6 +51,11 @@ class MoreMenuScreen extends StatelessWidget {
           ),
           const _SectionHeader('Toko'),
           _MenuTile(
+            icon: Icons.backup_outlined,
+            label: 'Backup & Restore',
+            onTap: () => context.push('/more/data'),
+          ),
+          _MenuTile(
             icon: Icons.settings_outlined,
             label: 'Pengaturan',
             onTap: () => _soon(context),

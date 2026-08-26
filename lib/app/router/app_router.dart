@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/backup/presentation/data_screen.dart';
 import '../../features/customers/presentation/customers_screen.dart';
 import '../../features/inventory/presentation/stock_card_screen.dart';
 import '../../features/finance/presentation/finance_screen.dart';
@@ -107,6 +108,10 @@ final GoRouter appRouter = GoRouter(
                 path: 'salesmen',
                 builder: (context, state) =>
                     const SimplePartyScreen(isSupplier: false),
+              ),
+              GoRoute(
+                path: 'data',
+                builder: (context, state) => const DataScreen(),
               ),
               GoRoute(
                 path: 'piutang',

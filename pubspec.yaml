@@ -53,6 +53,9 @@ dependencies:
   share_plus: ^13.3.0
   pdf: ^3.13.0
   printing: ^5.15.0
+  archive: ^4.0.9
+  file_picker: ^12.1.0
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:
