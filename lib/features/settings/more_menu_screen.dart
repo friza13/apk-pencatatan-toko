@@ -37,7 +37,7 @@ class MoreMenuScreen extends StatelessWidget {
           _MenuTile(
             icon: Icons.inventory_outlined,
             label: 'Stok (stok awal & penyesuaian)',
-            onTap: () => _soon(context),
+            onTap: () => context.push('/more/stock'),
           ),
           const _SectionHeader('Toko'),
           _MenuTile(

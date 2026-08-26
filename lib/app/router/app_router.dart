@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/dashboard/dashboard_screen.dart';
 import '../../features/customers/presentation/customers_screen.dart';
+import '../../features/inventory/presentation/stock_card_screen.dart';
+import '../../features/inventory/presentation/stock_screen.dart';
 import '../../features/customers/presentation/simple_party_screen.dart';
 import '../../features/products/presentation/product_detail_screen.dart';
 import '../../features/products/presentation/product_form_screen.dart';
@@ -89,6 +91,18 @@ final GoRouter appRouter = GoRouter(
                 path: 'salesmen',
                 builder: (context, state) =>
                     const SimplePartyScreen(isSupplier: false),
+              ),
+              GoRoute(
+                path: 'stock',
+                builder: (context, state) => const StockScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => StockCardScreen(
+                      productId: int.parse(state.pathParameters['id']!),
+                    ),
+                  ),
+                ],
               ),
               GoRoute(
                 path: 'references',
