@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_repository.dart';
 import 'providers.dart';
+export 'providers.dart' show pinHasherProvider;
 
 /// High-level authentication lifecycle (FR-AUTH-001).
 enum AuthPhase { booting, needsOnboarding, locked, unlocked }
@@ -63,6 +64,7 @@ class AuthController extends AsyncNotifier<AuthState> {
   Future<AuthRepository> _repo() async => AuthRepository(
         db: await ref.read(appDatabaseProvider.future),
         secureStore: ref.read(secureStoreProvider),
+        hasher: ref.read(pinHasherProvider),
       );
 
   /// Creates the owner/business and unlocks immediately.

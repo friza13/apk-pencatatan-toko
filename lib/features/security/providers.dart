@@ -6,8 +6,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/security/pin_hasher.dart';
 import '../../core/security/secure_store.dart';
 import '../../database/app_database.dart';
+
+/// PIN hashing strategy; widget tests override with cheap iterations.
+final Provider<PinHasher> pinHasherProvider =
+    Provider<PinHasher>((ref) => const PinHasher());
 
 /// Production [SecureStore] backed by flutter_secure_storage
 /// (Android Keystore-wrapped).

@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:drift/drift.dart';
 
-import '../../core/security/pin_hasher.dart' as pin_crypto;
+import '../../core/security/pin_hasher.dart';
 import '../../core/security/secure_store.dart';
 import '../../database/app_database.dart';
 
@@ -22,11 +22,18 @@ abstract final class SecureKeys {
 // impossible here; suppress the style lint for this repository class.
 // ignore_for_file: prefer_initializing_formals
 class AuthRepository {
-  AuthRepository({required AppDatabase db, required SecureStore secureStore})
-      : _db = db,
+  AuthRepository({
+    required AppDatabase db,
+    required SecureStore secureStore,
+    this.hasher = const PinHasher(),
+  })  : _db = db,
         _secure = secureStore;
+
   final AppDatabase _db;
   final SecureStore _secure;
+
+  /// Injectable for tests (cheap iterations) — production keeps the default.
+  final PinHasher hasher;
 
   Future<bool> isOnboarded() async {
     final rows = await _db.select(_db.owners).get();
@@ -78,7 +85,12 @@ class AuthRepository {
     if (salt == null || stored == null) {
       return false;
     }
-    return pin_crypto.verifyPin(pin: pin, saltHex: salt, expectedHashHex: stored);
+    return verifyPinHash(
+      hasher: hasher,
+      pin: pin,
+      saltHex: salt,
+      expectedHashHex: stored,
+    );
   }
 
   Future<void> changePin({
@@ -126,8 +138,8 @@ class AuthRepository {
   }
 
   Future<void> _writePinVerifier(String pin) async {
-    final salt = pin_crypto.PinHasher.newSalt();
-    final hash = await pin_crypto.PinHasher.hash(pin, salt);
+    final salt = hasher.newSalt();
+    final hash = await hasher.hash(pin, salt);
     await _secure.write(SecureKeys.pinSalt, salt);
     await _secure.write(SecureKeys.pinHash, hash);
   }

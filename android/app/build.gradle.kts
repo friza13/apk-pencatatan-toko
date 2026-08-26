@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.notakit.notakit"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_secure_storage v11 AAR metadata requires API 37.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

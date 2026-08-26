@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:notakit/core/security/pin_hasher.dart';
 import 'package:notakit/core/security/secure_store.dart';
 import 'package:notakit/database/app_database.dart';
 import 'package:notakit/features/security/auth_repository.dart';
@@ -29,7 +30,11 @@ void main() {
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
     secure = InMemorySecureStore();
-    repo = AuthRepository(db: db, secureStore: secure);
+    repo = AuthRepository(
+      db: db,
+      secureStore: secure,
+      hasher: const PinHasher(iterations: 1000),
+    );
   });
 
   tearDown(() async => db.close());

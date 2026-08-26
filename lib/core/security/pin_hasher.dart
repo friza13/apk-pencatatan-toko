@@ -4,24 +4,25 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 
-/// PIN verifier hashing (D-022).
-///
-/// The PIN itself is never stored. We store `salt + hash` where hash is
-/// PBKDF2-HMAC-SHA256 (100k iterations). The primary protection for local
-/// data is the Keystore-wrapped DB key and the encrypted database; this hash
-/// is defense-in-depth against casual inspection of secure storage.
-abstract final class PinHasher {
-  static const int iterations = 100000;
+/// Default PBKDF2 iterations for PIN verification (D-022).
+const int defaultPinHashIterations = 100000;
 
-  static final Pbkdf2 _pbkdf2 = Pbkdf2(
-    macAlgorithm: Hmac.sha256(),
-    iterations: iterations,
-    bits: 256,
-  );
+/// Computes/stores PIN verifiers. Injectable so widget tests can use a cheap
+/// iteration count while production keeps the full cost.
+class PinHasher {
+  const PinHasher({this.iterations = defaultPinHashIterations});
+
+  final int iterations;
+
+  Pbkdf2 get _pbkdf2 => Pbkdf2(
+        macAlgorithm: Hmac.sha256(),
+        iterations: iterations,
+        bits: 256,
+      );
 
   /// Generates a fresh random salt, hex-encoded (16 bytes), using the
   /// platform CSPRNG.
-  static String newSalt() {
+  String newSalt() {
     final rng = Random.secure();
     final salt = Uint8List.fromList(
       List<int>.generate(16, (_) => rng.nextInt(256)),
@@ -30,7 +31,7 @@ abstract final class PinHasher {
   }
 
   /// Computes the hex-encoded verifier for [pin] over [saltHex].
-  static Future<String> hash(String pin, String saltHex) async {
+  Future<String> hash(String pin, String saltHex) async {
     final secretKey = await _pbkdf2.deriveKeyFromPassword(
       password: pin,
       nonce: const HexCodec().decode(saltHex),
@@ -59,12 +60,13 @@ class HexCodec {
 }
 
 /// Verifies a PIN against stored salt+hash in constant time.
-Future<bool> verifyPin({
+Future<bool> verifyPinHash({
+  required PinHasher hasher,
   required String pin,
   required String saltHex,
   required String expectedHashHex,
 }) async {
-  final actual = await PinHasher.hash(pin, saltHex);
+  final actual = await hasher.hash(pin, saltHex);
   return constantTimeEquals(actual, expectedHashHex);
 }
 

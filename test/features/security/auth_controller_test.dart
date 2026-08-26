@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:notakit/core/security/pin_hasher.dart';
 import 'package:notakit/core/security/secure_store.dart';
 import 'package:notakit/database/app_database.dart';
 import 'package:notakit/features/security/auth_controller.dart';
@@ -54,6 +55,7 @@ void main() {
       appDatabaseProvider.overrideWith((ref) async => db),
       secureStoreProvider.overrideWithValue(secure),
       biometricAuthProvider.overrideWithValue(biometric),
+      pinHasherProvider.overrideWith((ref) => const PinHasher(iterations: 1000)),
     ]);
     addTearDown(container.dispose);
     addTearDown(db.close);

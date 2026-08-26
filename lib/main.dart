@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/auth_gate.dart';
 import 'app/router/app_router.dart';
 import 'app/theme/app_theme.dart';
 
@@ -20,6 +21,9 @@ class NotaKitApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.light,
       routerConfig: appRouter,
+      builder: (context, child) => AuthGate(
+        unlockedBuilder: (_) => child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
