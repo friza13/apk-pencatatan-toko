@@ -74,8 +74,10 @@ class Products extends Table with IdColumn, AuditColumns {
 
   /// `goods`, `service`, `non_stock`.
   TextColumn get type => text()
-      .withDefault(const Constant('goods'))
-      .customConstraint("CHECK (type IN ('goods','service','non_stock'))")();
+      .customConstraint(
+        "NOT NULL DEFAULT 'goods' "
+        "CHECK (type IN ('goods','service','non_stock'))",
+      )();
 
   TextColumn get photoPath => text().nullable()();
 

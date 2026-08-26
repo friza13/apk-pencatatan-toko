@@ -36,8 +36,8 @@ class Purchases extends Table with IdColumn, AuditColumns {
 
   /// `draft`, `finalized`, `voided`.
   TextColumn get status => text()
-      .withDefault(const Constant('draft'))
       .customConstraint(
+        "NOT NULL DEFAULT 'draft' "
         "CHECK (status IN ('draft','finalized','voided'))",
       )();
 

@@ -35,10 +35,11 @@ class StockMovements extends Table with IdColumn {
 
   /// `purchase_in`, `sale_out`, `sales_return_in`, `purchase_return_out`,
   /// `adjustment_in`, `adjustment_out`, `stock_opname`, `opening_balance`.
-  TextColumn get movementType => text().customConstraint(
-        "CHECK (movement_type IN ('purchase_in','sale_out','sales_return_in',"
-        "'purchase_return_out','adjustment_in','adjustment_out',"
-        "'stock_opname','opening_balance'))",
+  TextColumn get movementType => text()
+      .customConstraint(
+        "NOT NULL CHECK (movement_type IN ('purchase_in','sale_out',"
+        "'sales_return_in','purchase_return_out','adjustment_in',"
+        "'adjustment_out','stock_opname','opening_balance'))",
       )();
 
   IntColumn get qtyBaseMicro => integer()();

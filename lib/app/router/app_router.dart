@@ -10,7 +10,9 @@ import '../../features/products/presentation/product_detail_screen.dart';
 import '../../features/products/presentation/product_form_screen.dart';
 import '../../features/products/presentation/products_screen.dart';
 import '../../features/reports/reports_screen.dart';
-import '../../features/sales/sales_screen.dart';
+import '../../features/sales/presentation/new_sale_screen.dart';
+import '../../features/sales/presentation/sale_detail_screen.dart';
+import '../../features/sales/presentation/sales_screen.dart';
 import '../../features/settings/more_menu_screen.dart';
 import '../../features/settings/presentation/references_screen.dart';
 
@@ -39,6 +41,18 @@ final GoRouter appRouter = GoRouter(
           GoRoute(
             path: '/sales',
             builder: (context, state) => const SalesScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) => const NewSaleScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => SaleDetailScreen(
+                  saleId: int.parse(state.pathParameters['id']!),
+                ),
+              ),
+            ],
           ),
         ]),
         StatefulShellBranch(routes: [

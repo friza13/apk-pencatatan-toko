@@ -5317,8 +5317,9 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    $customConstraints: 'CHECK (type IN (\'goods\',\'service\',\'non_stock\'))',
-    defaultValue: const Constant('goods'),
+    $customConstraints:
+        'NOT NULL DEFAULT \'goods\' CHECK (type IN (\'goods\',\'service\',\'non_stock\'))',
+    defaultValue: const CustomExpression('\'goods\''),
   );
   static const VerificationMeta _photoPathMeta = const VerificationMeta(
     'photoPath',
@@ -11798,8 +11799,8 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     $customConstraints:
-        'CHECK (status IN (\'draft\',\'confirmed\',\'paid\',\'partially_paid\',\'credit\',\'voided\'))',
-    defaultValue: const Constant('draft'),
+        'NOT NULL DEFAULT \'draft\' CHECK (status IN (\'draft\',\'confirmed\',\'paid\',\'partially_paid\',\'credit\',\'voided\'))',
+    defaultValue: const CustomExpression('\'draft\''),
   );
   static const VerificationMeta _saleTypeMeta = const VerificationMeta(
     'saleType',
@@ -11812,8 +11813,8 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     $customConstraints:
-        'CHECK (sale_type IN (\'retail\',\'wholesale\',\'restaurant\',\'online\',\'minimarket\'))',
-    defaultValue: const Constant('retail'),
+        'NOT NULL DEFAULT \'retail\' CHECK (sale_type IN (\'retail\',\'wholesale\',\'restaurant\',\'online\',\'minimarket\'))',
+    defaultValue: const CustomExpression('\'retail\''),
   );
   static const VerificationMeta _orderTypeMeta = const VerificationMeta(
     'orderType',
@@ -14044,8 +14045,8 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     $customConstraints:
-        'CHECK (type IN (\'cash\',\'bank\',\'ewallet\',\'other\'))',
-    defaultValue: const Constant('cash'),
+        'NOT NULL DEFAULT \'cash\' CHECK (type IN (\'cash\',\'bank\',\'ewallet\',\'other\'))',
+    defaultValue: const CustomExpression('\'cash\''),
   );
   static const VerificationMeta _accountNumberMeta = const VerificationMeta(
     'accountNumber',
@@ -15205,8 +15206,8 @@ class $PurchasesTable extends Purchases
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     $customConstraints:
-        'CHECK (status IN (\'draft\',\'finalized\',\'voided\'))',
-    defaultValue: const Constant('draft'),
+        'NOT NULL DEFAULT \'draft\' CHECK (status IN (\'draft\',\'finalized\',\'voided\'))',
+    defaultValue: const CustomExpression('\'draft\''),
   );
   static const VerificationMeta _subtotalMinorMeta = const VerificationMeta(
     'subtotalMinor',
@@ -16135,7 +16136,7 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    $customConstraints: 'CHECK (direction IN (\'in\',\'out\'))',
+    $customConstraints: 'NOT NULL CHECK (direction IN (\'in\',\'out\'))',
   );
   static const VerificationMeta _purposeMeta = const VerificationMeta(
     'purpose',
@@ -16148,7 +16149,7 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     $customConstraints:
-        'CHECK (purpose IN (\'sale_payment\',\'purchase_payment\',\'receivable_settlement\',\'payable_settlement\',\'refund\',\'transfer\',\'other_income\',\'other_expense\'))',
+        'NOT NULL CHECK (purpose IN (\'sale_payment\',\'purchase_payment\',\'receivable_settlement\',\'payable_settlement\',\'refund\',\'transfer\',\'other_income\',\'other_expense\'))',
   );
   static const VerificationMeta _accountIdMeta = const VerificationMeta(
     'accountId',
@@ -16225,7 +16226,7 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
-    $customConstraints: 'CHECK (amount_minor > 0)',
+    $customConstraints: 'NOT NULL CHECK (amount_minor > 0)',
   );
   static const VerificationMeta _methodMeta = const VerificationMeta('method');
   @override
@@ -16236,8 +16237,8 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     $customConstraints:
-        'CHECK (method IN (\'cash\',\'bank\',\'ewallet\',\'card\',\'other\'))',
-    defaultValue: const Constant('cash'),
+        'NOT NULL DEFAULT \'cash\' CHECK (method IN (\'cash\',\'bank\',\'ewallet\',\'card\',\'other\'))',
+    defaultValue: const CustomExpression('\'cash\''),
   );
   static const VerificationMeta _categoryMeta = const VerificationMeta(
     'category',
@@ -17124,8 +17125,9 @@ class $ReceivablesTable extends Receivables
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    $customConstraints: 'CHECK (status IN (\'open\',\'partial\',\'paid\'))',
-    defaultValue: const Constant('open'),
+    $customConstraints:
+        'NOT NULL DEFAULT \'open\' CHECK (status IN (\'open\',\'partial\',\'paid\'))',
+    defaultValue: const CustomExpression('\'open\''),
   );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime?, int> closedAt =
@@ -17777,7 +17779,7 @@ class $ReceivablePaymentsTable extends ReceivablePayments
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
-    $customConstraints: 'CHECK (amount_applied_minor > 0)',
+    $customConstraints: 'NOT NULL CHECK (amount_applied_minor > 0)',
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -18110,7 +18112,7 @@ class $LedgerEntriesTable extends LedgerEntries
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-    $customConstraints: 'CHECK (entry_type IN (\'debit\',\'credit\'))',
+    $customConstraints: 'NOT NULL CHECK (entry_type IN (\'debit\',\'credit\'))',
   );
   static const VerificationMeta _amountMinorMeta = const VerificationMeta(
     'amountMinor',
@@ -18122,7 +18124,7 @@ class $LedgerEntriesTable extends LedgerEntries
     false,
     type: DriftSqlType.int,
     requiredDuringInsert: true,
-    $customConstraints: 'CHECK (amount_minor > 0)',
+    $customConstraints: 'NOT NULL CHECK (amount_minor > 0)',
   );
   @override
   late final GeneratedColumnWithTypeConverter<DateTime, int> occurredAt =
@@ -18664,7 +18666,7 @@ class $StockMovementsTable extends StockMovements
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     $customConstraints:
-        'CHECK (movement_type IN (\'purchase_in\',\'sale_out\',\'sales_return_in\',\'purchase_return_out\',\'adjustment_in\',\'adjustment_out\',\'stock_opname\',\'opening_balance\'))',
+        'NOT NULL CHECK (movement_type IN (\'purchase_in\',\'sale_out\',\'sales_return_in\',\'purchase_return_out\',\'adjustment_in\',\'adjustment_out\',\'stock_opname\',\'opening_balance\'))',
   );
   static const VerificationMeta _qtyBaseMicroMeta = const VerificationMeta(
     'qtyBaseMicro',

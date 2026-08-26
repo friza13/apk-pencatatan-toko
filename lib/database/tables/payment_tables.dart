@@ -16,8 +16,8 @@ class Accounts extends Table with IdColumn {
 
   /// `cash`, `bank`, `ewallet`, `other`.
   TextColumn get type => text()
-      .withDefault(const Constant('cash'))
       .customConstraint(
+        "NOT NULL DEFAULT 'cash' "
         "CHECK (type IN ('cash','bank','ewallet','other'))",
       )();
 
@@ -51,13 +51,13 @@ class Payments extends Table with IdColumn {
 
   /// `in` = money into [accountId]; `out` = money out of it.
   TextColumn get direction => text()
-      .customConstraint("CHECK (direction IN ('in','out'))")();
+      .customConstraint("NOT NULL CHECK (direction IN ('in','out'))")();
 
   /// `sale_payment`, `purchase_payment`, `receivable_settlement`,
   /// `payable_settlement` (future), `refund`, `transfer`, `other_income`,
   /// `other_expense`.
   TextColumn get purpose => text().customConstraint(
-        "CHECK (purpose IN ('sale_payment','purchase_payment',"
+        "NOT NULL CHECK (purpose IN ('sale_payment','purchase_payment',"
         "'receivable_settlement','payable_settlement','refund','transfer',"
         "'other_income','other_expense'))",
       )();
@@ -83,12 +83,12 @@ class Payments extends Table with IdColumn {
 
   /// Always positive; direction carries the sign.
   IntColumn get amountMinor => integer()
-      .customConstraint('CHECK (amount_minor > 0)')();
+      .customConstraint('NOT NULL CHECK (amount_minor > 0)')();
 
   /// `cash`, `bank`, `ewallet`, `card`, `other`.
   TextColumn get method => text()
-      .withDefault(const Constant('cash'))
       .customConstraint(
+        "NOT NULL DEFAULT 'cash' "
         "CHECK (method IN ('cash','bank','ewallet','card','other'))",
       )();
 
@@ -125,9 +125,8 @@ class Receivables extends Table with IdColumn, AuditColumns {
 
   /// `open`, `partial`, `paid`.
   TextColumn get status => text()
-      .withDefault(const Constant('open'))
       .customConstraint(
-        "CHECK (status IN ('open','partial','paid'))",
+        "NOT NULL DEFAULT 'open' CHECK (status IN ('open','partial','paid'))",
       )();
 
   IntColumn get closedAt =>
@@ -147,7 +146,7 @@ class ReceivablePayments extends Table with IdColumn {
       integer().references(Payments, #id, onDelete: KeyAction.restrict)();
 
   IntColumn get amountAppliedMinor => integer()
-      .customConstraint('CHECK (amount_applied_minor > 0)')();
+      .customConstraint('NOT NULL CHECK (amount_applied_minor > 0)')();
 }
 
 /// Cash ledger — every balance-affecting action posts here
@@ -169,10 +168,10 @@ class LedgerEntries extends Table with IdColumn {
 
   /// `debit` (increase cash/bank) or `credit` (decrease).
   TextColumn get entryType => text()
-      .customConstraint("CHECK (entry_type IN ('debit','credit'))")();
+      .customConstraint("NOT NULL CHECK (entry_type IN ('debit','credit'))")();
 
   IntColumn get amountMinor => integer()
-      .customConstraint('CHECK (amount_minor > 0)')();
+      .customConstraint('NOT NULL CHECK (amount_minor > 0)')();
 
   IntColumn get occurredAt =>
       integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();

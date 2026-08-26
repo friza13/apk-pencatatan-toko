@@ -35,18 +35,16 @@ class Sales extends Table with IdColumn, AuditColumns {
   /// Lifecycle per D-009: draft → confirmed → paid/partially_paid/credit,
   /// with voided as terminal side-state.
   TextColumn get status => text()
-      .withDefault(const Constant('draft'))
       .customConstraint(
-        "CHECK (status IN ('draft','confirmed','paid','partially_paid',"
-        "'credit','voided'))",
+        "NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','confirmed',"
+        "'paid','partially_paid','credit','voided'))",
       )();
 
   /// Business mode of the transaction.
   TextColumn get saleType => text()
-      .withDefault(const Constant('retail'))
       .customConstraint(
-        "CHECK (sale_type IN ('retail','wholesale','restaurant','online',"
-        "'minimarket'))",
+        "NOT NULL DEFAULT 'retail' CHECK (sale_type IN ('retail','wholesale',"
+        "'restaurant','online','minimarket'))",
       )();
 
   /// Reserved for future restaurant order types; unused in MVP UI (#16).
