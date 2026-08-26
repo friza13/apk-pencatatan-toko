@@ -380,4 +380,6 @@ Setiap checkpoint: `flutter analyze` ✓, `flutter test` ✓, `flutter build apk
 | 2026-08-26 | P2 Core domain — **PASS** | Qty, MoneyPolicy (D-011 penuh), PricingEngine (FR-PRICE-001), BusinessClock (D-012) • 41 domain tests hijau (total 76+) | `6edf686`,`648bcdf`,`81cada9` |
 | 2026-08-26 | P3 Auth & Store — **PASS** | Onboarding 3 langkah • PIN hash PBKDF2 injectable (D-022) • biometrik local_auth • DB key random Keystore-wrapped • LockScreen + router gate • 93 tests • apk ✓ | `ad368fc`→`c227a5f` |
 
-**Status berikutnya: CHECKPOINT P3 lapor ke owner → P4 Master data.**
+| 2026-08-26 | PIN fix (D-023) | PIN tepat 6 digit di semua flow; test diperbarui; APK reinstall | d93d10 |
+| 2026-08-26 | P4 Master data - **PASS** | Repo produk agregat+referensi+parties (9 tests) | UI list/search/filter/form/detail/arsip | Pelanggan/Supplier/Salesman/Referensi | Menu Lainnya nyata | 102 tests, apk ✓ | 1a28a40,ce7c67d |
+**Status berikutnya: CHECKPOINT P4 lapor ke owner -> P5 Inventory.**
