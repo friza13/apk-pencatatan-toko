@@ -93,6 +93,14 @@ class AuthRepository {
     );
   }
 
+  /// Sets a fresh PIN verifier without requiring the old one. Hanya untuk
+  /// skenario restore-backup di perangkat baru (verifier PIN tidak ikut
+  /// pindah karena tersimpan di secure storage perangkat).
+  Future<void> setPin(String newPin) async {
+    _validatePin(newPin);
+    await _writePinVerifier(newPin);
+  }
+
   Future<void> changePin({
     required String oldPin,
     required String newPin,

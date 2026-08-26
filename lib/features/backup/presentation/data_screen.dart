@@ -8,13 +8,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../products/controllers/products_providers.dart';
 import '../../security/providers.dart';
-import '../data/backup_service.dart';
+import '../controllers/backup_providers.dart';
 
-final FutureProvider<BackupService> backupServiceProvider =
-    FutureProvider<BackupService>((ref) async {
-  final db = await ref.watch(appDatabaseProvider.future);
-  return BackupService(db);
-});
 
 /// Backup & Restore (.nkb) - DESAIN §23 flow.
 class DataScreen extends ConsumerStatefulWidget {

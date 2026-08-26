@@ -1,10 +1,15 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+
+import '../backup/controllers/backup_providers.dart';
+import '../security/auth_controller.dart';
+import '../security/auth_repository.dart';
 import '../security/providers.dart';
 import 'data/demo_data_seeder.dart';
-
-
-import '../security/auth_controller.dart';
 
 /// 3-step onboarding (DESAIN §38):
 ///   1. "Kenalkan toko kamu" — nama owner + nama usaha
@@ -46,6 +51,109 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         return true; // data kosong adalah pilihan default
       default:
         return _pin.text.length == 6 && _pin.text == _pinConfirm.text;
+    }
+  }
+
+  /// Pulihkan .nkb saat onboarding: data owner/business ikut dari backup,
+  /// lalu user diminta membuat PIN baru untuk perangkat ini (verifier PIN
+  /// tidak ikut pindah karena tersimpan di secure storage perangkat lama).
+  Future<String> getDocsDir() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return dir.path;
+  }
+
+  Future<void> _importBackup() async {
+    final picked = await FilePicker.pickFiles(dialogTitle: 'Pilih file .nkb');
+    final path = picked.isEmpty ? null : picked.first.path;
+    if (path == null || !mounted) return;
+
+    final passwordC = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Password backup'),
+        content: TextField(
+          controller: passwordC,
+          obscureText: true,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Password'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Pulihkan')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final service = await ref.read(backupServiceProvider.future);
+      final preview =
+          await service.inspect(nkbFile: File(path), password: passwordC.text);
+
+      // Tutup koneksi DB kosong bawaan onboarding sebelum file ditimpa.
+      ref.invalidate(appDatabaseProvider);
+
+      final docs = await getDocsDir();
+      await service.applyRestore(
+        preview: preview,
+        targetDbPath: '$docs/notakit.db',
+        dbPassphrase: preview.dbKeyHex,
+      );
+
+      // Kunci DB dari backup dipakai untuk membuka database terpulihkan.
+      final secure = ref.read(secureStoreProvider);
+      await secure.write('nk.db.key', preview.dbKeyHex);
+
+      // PIN baru untuk perangkat ini.
+      ref.invalidate(appDatabaseProvider);
+      final repo = AuthRepository(
+          db: await ref.read(appDatabaseProvider.future),
+          secureStore: secure);
+      if (!mounted) return;
+      final pinC = TextEditingController();
+      final pinSaved = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Buat PIN baru'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text(
+                'Data berhasil dipulihkan. Buat PIN baru untuk perangkat ini.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: pinC,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration:
+                  const InputDecoration(labelText: 'PIN (6 digit)'),
+            ),
+          ]),
+          actions: [
+            FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Simpan')),
+          ],
+        ),
+      );
+      if (pinSaved != true || !mounted) return;
+      await repo.setPin(pinC.text);
+
+      // Muat ulang auth state -> locked -> unlock dengan PIN baru.
+      ref.invalidate(authControllerProvider);
+    } catch (e) {
+      setState(() {
+        _busy = false;
+        _error = e.toString();
+      });
     }
   }
 
@@ -106,6 +214,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _onContinue() {
     if (_step < 2) {
+      // Pilihan "Pulihkan dari backup" langsung menjalankan import
+      // dan melewati step PIN (PIN baru diminta setelah restore).
+      if (_step == 1 && _dataChoice == 2) {
+        _importBackup();
+        return;
+      }
       setState(() => _step++);
     } else {
       _finish();
@@ -148,11 +262,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   subtitle: const Text(
                       'Cocok untuk usaha yang baru mulai pakai NotaKit.'),
                 ),
-                const ListTile(
-                  enabled: false,
-                  leading: Icon(null),
-                  title: Text('Import backup'),
-                  subtitle: Text('Pindahkan data dari HP lama (segera).'),
+                RadioListTile<int>(
+                  value: 1,
+                  title: const Text('Pulihkan dari file backup'),
+                  subtitle: const Text(
+                      'Pindahkan data dari HP lama lewat file .nkb.'),
                 ),
               ],
             ),
@@ -177,9 +291,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 controller: _pinConfirm,
                 obscureText: true,
                 keyboardType: TextInputType.number,
-                maxLength: 8,
+                maxLength: 6,
                 decoration:
-                    const InputDecoration(labelText: 'Ulangi PIN'),
+                    const InputDecoration(labelText: 'Ulangi PIN (6 digit)'),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 8),

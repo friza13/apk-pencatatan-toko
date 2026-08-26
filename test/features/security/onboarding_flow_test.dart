@@ -91,7 +91,7 @@ void main() {
     );
     await tester.pump();
     await tester.enterText(
-      find.widgetWithText(TextField, 'Ulangi PIN'),
+      find.widgetWithText(TextField, 'Ulangi PIN (6 digit)'),
       '123456',
     );
     await tester.pump();
