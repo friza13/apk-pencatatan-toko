@@ -35,6 +35,16 @@ class MoreMenuScreen extends StatelessWidget {
             onTap: () => context.push('/more/references'),
           ),
           _MenuTile(
+            icon: Icons.request_quote_outlined,
+            label: 'Piutang',
+            onTap: () => context.push('/more/piutang'),
+          ),
+          _MenuTile(
+            icon: Icons.account_balance_wallet_outlined,
+            label: 'Kas & Bank',
+            onTap: () => context.push('/more/kas'),
+          ),
+          _MenuTile(
             icon: Icons.inventory_outlined,
             label: 'Stok (stok awal & penyesuaian)',
             onTap: () => context.push('/more/stock'),
