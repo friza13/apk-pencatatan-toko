@@ -399,7 +399,7 @@ class OwnersCompanion extends UpdateCompanion<Owner> {
 }
 
 class $BusinessesTable extends Businesses
-    with TableInfo<$BusinessesTable, BusinessesData> {
+    with TableInfo<$BusinessesTable, Business> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -607,7 +607,7 @@ class $BusinessesTable extends Businesses
   static const String $name = 'businesses';
   @override
   VerificationContext validateIntegrity(
-    Insertable<BusinessesData> instance, {
+    Insertable<Business> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -715,9 +715,9 @@ class $BusinessesTable extends Businesses
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  BusinessesData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  Business map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return BusinessesData(
+    return Business(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
@@ -800,7 +800,7 @@ class $BusinessesTable extends Businesses
       const EpochMillisUtcConverter();
 }
 
-class BusinessesData extends DataClass implements Insertable<BusinessesData> {
+class Business extends DataClass implements Insertable<Business> {
   final int id;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -832,7 +832,7 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
   /// Optional denomination rounding in minor units (e.g. 100/500), off when
   /// null (D-011).
   final int? roundingDenomination;
-  const BusinessesData({
+  const Business({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
@@ -925,12 +925,12 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
     );
   }
 
-  factory BusinessesData.fromJson(
+  factory Business.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return BusinessesData(
+    return Business(
       id: serializer.fromJson<int>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -974,7 +974,7 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
     };
   }
 
-  BusinessesData copyWith({
+  Business copyWith({
     int? id,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -991,7 +991,7 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
     String? invoicePrefix,
     int? invoiceSequence,
     Value<int?> roundingDenomination = const Value.absent(),
-  }) => BusinessesData(
+  }) => Business(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1011,8 +1011,8 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
         ? roundingDenomination.value
         : this.roundingDenomination,
   );
-  BusinessesData copyWithCompanion(BusinessesCompanion data) {
-    return BusinessesData(
+  Business copyWithCompanion(BusinessesCompanion data) {
+    return Business(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -1044,7 +1044,7 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
 
   @override
   String toString() {
-    return (StringBuffer('BusinessesData(')
+    return (StringBuffer('Business(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1087,7 +1087,7 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is BusinessesData &&
+      (other is Business &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
@@ -1106,7 +1106,7 @@ class BusinessesData extends DataClass implements Insertable<BusinessesData> {
           other.roundingDenomination == this.roundingDenomination);
 }
 
-class BusinessesCompanion extends UpdateCompanion<BusinessesData> {
+class BusinessesCompanion extends UpdateCompanion<Business> {
   final Value<int> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1160,7 +1160,7 @@ class BusinessesCompanion extends UpdateCompanion<BusinessesData> {
     this.roundingDenomination = const Value.absent(),
   }) : ownerId = Value(ownerId),
        name = Value(name);
-  static Insertable<BusinessesData> custom({
+  static Insertable<Business> custom({
     Expression<int>? id,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -9022,8 +9022,7 @@ class CustomerTypesCompanion extends UpdateCompanion<CustomerType> {
   }
 }
 
-class $SalesmenTable extends Salesmen
-    with TableInfo<$SalesmenTable, SalesmenData> {
+class $SalesmenTable extends Salesmen with TableInfo<$SalesmenTable, Salesman> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -9113,7 +9112,7 @@ class $SalesmenTable extends Salesmen
   static const String $name = 'salesmen';
   @override
   VerificationContext validateIntegrity(
-    Insertable<SalesmenData> instance, {
+    Insertable<Salesman> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -9167,9 +9166,9 @@ class $SalesmenTable extends Salesmen
     {businessId, code},
   ];
   @override
-  SalesmenData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  Salesman map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SalesmenData(
+    return Salesman(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
@@ -9203,14 +9202,14 @@ class $SalesmenTable extends Salesmen
   }
 }
 
-class SalesmenData extends DataClass implements Insertable<SalesmenData> {
+class Salesman extends DataClass implements Insertable<Salesman> {
   final int id;
   final int businessId;
   final String code;
   final String name;
   final String? phone;
   final bool isActive;
-  const SalesmenData({
+  const Salesman({
     required this.id,
     required this.businessId,
     required this.code,
@@ -9245,12 +9244,12 @@ class SalesmenData extends DataClass implements Insertable<SalesmenData> {
     );
   }
 
-  factory SalesmenData.fromJson(
+  factory Salesman.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SalesmenData(
+    return Salesman(
       id: serializer.fromJson<int>(json['id']),
       businessId: serializer.fromJson<int>(json['businessId']),
       code: serializer.fromJson<String>(json['code']),
@@ -9272,14 +9271,14 @@ class SalesmenData extends DataClass implements Insertable<SalesmenData> {
     };
   }
 
-  SalesmenData copyWith({
+  Salesman copyWith({
     int? id,
     int? businessId,
     String? code,
     String? name,
     Value<String?> phone = const Value.absent(),
     bool? isActive,
-  }) => SalesmenData(
+  }) => Salesman(
     id: id ?? this.id,
     businessId: businessId ?? this.businessId,
     code: code ?? this.code,
@@ -9287,8 +9286,8 @@ class SalesmenData extends DataClass implements Insertable<SalesmenData> {
     phone: phone.present ? phone.value : this.phone,
     isActive: isActive ?? this.isActive,
   );
-  SalesmenData copyWithCompanion(SalesmenCompanion data) {
-    return SalesmenData(
+  Salesman copyWithCompanion(SalesmenCompanion data) {
+    return Salesman(
       id: data.id.present ? data.id.value : this.id,
       businessId: data.businessId.present
           ? data.businessId.value
@@ -9302,7 +9301,7 @@ class SalesmenData extends DataClass implements Insertable<SalesmenData> {
 
   @override
   String toString() {
-    return (StringBuffer('SalesmenData(')
+    return (StringBuffer('Salesman(')
           ..write('id: $id, ')
           ..write('businessId: $businessId, ')
           ..write('code: $code, ')
@@ -9318,7 +9317,7 @@ class SalesmenData extends DataClass implements Insertable<SalesmenData> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is SalesmenData &&
+      (other is Salesman &&
           other.id == this.id &&
           other.businessId == this.businessId &&
           other.code == this.code &&
@@ -9327,7 +9326,7 @@ class SalesmenData extends DataClass implements Insertable<SalesmenData> {
           other.isActive == this.isActive);
 }
 
-class SalesmenCompanion extends UpdateCompanion<SalesmenData> {
+class SalesmenCompanion extends UpdateCompanion<Salesman> {
   final Value<int> id;
   final Value<int> businessId;
   final Value<String> code;
@@ -9352,7 +9351,7 @@ class SalesmenCompanion extends UpdateCompanion<SalesmenData> {
   }) : businessId = Value(businessId),
        code = Value(code),
        name = Value(name);
-  static Insertable<SalesmenData> custom({
+  static Insertable<Salesman> custom({
     Expression<int>? id,
     Expression<int>? businessId,
     Expression<String>? code,
@@ -24262,7 +24261,7 @@ final class $$OwnersTableReferences
     extends BaseReferences<_$AppDatabase, $OwnersTable, Owner> {
   $$OwnersTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$BusinessesTable, List<BusinessesData>>
+  static MultiTypedResultKey<$BusinessesTable, List<Business>>
   _businessesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.businesses,
     aliasName: 'owners__id__businesses__owner_id',
@@ -24513,11 +24512,7 @@ class $$OwnersTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (businessesRefs)
-                    await $_getPrefetchedData<
-                      Owner,
-                      $OwnersTable,
-                      BusinessesData
-                    >(
+                    await $_getPrefetchedData<Owner, $OwnersTable, Business>(
                       currentTable: table,
                       referencedTable: $$OwnersTableReferences
                           ._businessesRefsTable(db),
@@ -24589,7 +24584,7 @@ typedef $$BusinessesTableUpdateCompanionBuilder =
     });
 
 final class $$BusinessesTableReferences
-    extends BaseReferences<_$AppDatabase, $BusinessesTable, BusinessesData> {
+    extends BaseReferences<_$AppDatabase, $BusinessesTable, Business> {
   $$BusinessesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $OwnersTable _ownerIdTable(_$AppDatabase db) =>
@@ -24795,8 +24790,9 @@ final class $$BusinessesTableReferences
     );
   }
 
-  static MultiTypedResultKey<$SalesmenTable, List<SalesmenData>>
-  _salesmenRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+  static MultiTypedResultKey<$SalesmenTable, List<Salesman>> _salesmenRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
     db.salesmen,
     aliasName: 'businesses__id__salesmen__business_id',
   );
@@ -26435,14 +26431,14 @@ class $$BusinessesTableTableManager
         RootTableManager<
           _$AppDatabase,
           $BusinessesTable,
-          BusinessesData,
+          Business,
           $$BusinessesTableFilterComposer,
           $$BusinessesTableOrderingComposer,
           $$BusinessesTableAnnotationComposer,
           $$BusinessesTableCreateCompanionBuilder,
           $$BusinessesTableUpdateCompanionBuilder,
-          (BusinessesData, $$BusinessesTableReferences),
-          BusinessesData,
+          (Business, $$BusinessesTableReferences),
+          Business,
           PrefetchHooks Function({
             bool ownerId,
             bool appSettingsRefs,
@@ -26649,7 +26645,7 @@ class $$BusinessesTableTableManager
                     return [
                       if (appSettingsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           AppSetting
                         >(
@@ -26670,7 +26666,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (activityLogsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           ActivityLog
                         >(
@@ -26691,7 +26687,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (appNotificationsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           AppNotification
                         >(
@@ -26712,7 +26708,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (backupRecordsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           BackupRecord
                         >(
@@ -26733,7 +26729,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (printerProfilesRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           PrinterProfile
                         >(
@@ -26754,7 +26750,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (categoriesRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Category
                         >(
@@ -26775,7 +26771,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (unitsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Unit
                         >(
@@ -26796,7 +26792,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (productsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Product
                         >(
@@ -26817,7 +26813,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (priceTiersRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           PriceTier
                         >(
@@ -26838,7 +26834,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (customerTypesRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           CustomerType
                         >(
@@ -26859,9 +26855,9 @@ class $$BusinessesTableTableManager
                         ),
                       if (salesmenRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
-                          SalesmenData
+                          Salesman
                         >(
                           currentTable: table,
                           referencedTable: $$BusinessesTableReferences
@@ -26880,7 +26876,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (customersRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Customer
                         >(
@@ -26901,7 +26897,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (salesRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Sale
                         >(
@@ -26922,7 +26918,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (accountsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Account
                         >(
@@ -26943,7 +26939,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (suppliersRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Supplier
                         >(
@@ -26964,7 +26960,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (purchasesRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Purchase
                         >(
@@ -26985,7 +26981,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (paymentsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Payment
                         >(
@@ -27006,7 +27002,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (receivablesRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           Receivable
                         >(
@@ -27027,7 +27023,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (stockMovementsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           StockMovement
                         >(
@@ -27048,7 +27044,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (salesReturnsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           SalesReturn
                         >(
@@ -27069,7 +27065,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (purchaseReturnsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           PurchaseReturn
                         >(
@@ -27090,7 +27086,7 @@ class $$BusinessesTableTableManager
                         ),
                       if (marketplaceAccountsRefs)
                         await $_getPrefetchedData<
-                          BusinessesData,
+                          Business,
                           $BusinessesTable,
                           MarketplaceAccount
                         >(
@@ -27121,14 +27117,14 @@ typedef $$BusinessesTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $BusinessesTable,
-      BusinessesData,
+      Business,
       $$BusinessesTableFilterComposer,
       $$BusinessesTableOrderingComposer,
       $$BusinessesTableAnnotationComposer,
       $$BusinessesTableCreateCompanionBuilder,
       $$BusinessesTableUpdateCompanionBuilder,
-      (BusinessesData, $$BusinessesTableReferences),
-      BusinessesData,
+      (Business, $$BusinessesTableReferences),
+      Business,
       PrefetchHooks Function({
         bool ownerId,
         bool appSettingsRefs,
@@ -35166,7 +35162,7 @@ typedef $$SalesmenTableUpdateCompanionBuilder =
     });
 
 final class $$SalesmenTableReferences
-    extends BaseReferences<_$AppDatabase, $SalesmenTable, SalesmenData> {
+    extends BaseReferences<_$AppDatabase, $SalesmenTable, Salesman> {
   $$SalesmenTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static $BusinessesTable _businessIdTable(_$AppDatabase db) =>
@@ -35493,14 +35489,14 @@ class $$SalesmenTableTableManager
         RootTableManager<
           _$AppDatabase,
           $SalesmenTable,
-          SalesmenData,
+          Salesman,
           $$SalesmenTableFilterComposer,
           $$SalesmenTableOrderingComposer,
           $$SalesmenTableAnnotationComposer,
           $$SalesmenTableCreateCompanionBuilder,
           $$SalesmenTableUpdateCompanionBuilder,
-          (SalesmenData, $$SalesmenTableReferences),
-          SalesmenData,
+          (Salesman, $$SalesmenTableReferences),
+          Salesman,
           PrefetchHooks Function({
             bool businessId,
             bool customersRefs,
@@ -35602,7 +35598,7 @@ class $$SalesmenTableTableManager
                     return [
                       if (customersRefs)
                         await $_getPrefetchedData<
-                          SalesmenData,
+                          Salesman,
                           $SalesmenTable,
                           Customer
                         >(
@@ -35623,7 +35619,7 @@ class $$SalesmenTableTableManager
                         ),
                       if (salesRefs)
                         await $_getPrefetchedData<
-                          SalesmenData,
+                          Salesman,
                           $SalesmenTable,
                           Sale
                         >(
@@ -35654,14 +35650,14 @@ typedef $$SalesmenTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $SalesmenTable,
-      SalesmenData,
+      Salesman,
       $$SalesmenTableFilterComposer,
       $$SalesmenTableOrderingComposer,
       $$SalesmenTableAnnotationComposer,
       $$SalesmenTableCreateCompanionBuilder,
       $$SalesmenTableUpdateCompanionBuilder,
-      (SalesmenData, $$SalesmenTableReferences),
-      SalesmenData,
+      (Salesman, $$SalesmenTableReferences),
+      Salesman,
       PrefetchHooks Function({
         bool businessId,
         bool customersRefs,

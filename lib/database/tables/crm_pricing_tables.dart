@@ -68,6 +68,7 @@ class Customers extends Table with IdColumn, AuditColumns {
 }
 
 /// Sales representatives (FR section H).
+@DataClassName('Salesman')
 class Salesmen extends Table with IdColumn {
   IntColumn get businessId =>
       integer().references(Businesses, #id, onDelete: KeyAction.cascade)();

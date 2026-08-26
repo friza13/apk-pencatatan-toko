@@ -13,6 +13,7 @@ class Owners extends Table with IdColumn, AuditColumns {
 }
 
 /// Business workspace — one active instance (PRD §29 keeps business_id).
+@DataClassName('Business')
 class Businesses extends Table with IdColumn, AuditColumns {
   IntColumn get ownerId =>
       integer().references(Owners, #id, onDelete: KeyAction.restrict)();
