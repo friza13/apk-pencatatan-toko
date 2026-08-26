@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/money/money.dart';
 import '../../../core/units/quantity.dart';
 import '../../products/controllers/products_providers.dart';
+import '../../printing/presentation/print_sheet.dart';
 import '../controllers/sales_providers.dart';
 
 /// Detail nota + void action.
@@ -72,6 +73,27 @@ class SaleDetailScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.bodySmall),
                 ),
               const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.receipt_outlined),
+                  label: const Text('Cetak / PDF'),
+                  onPressed: () {
+                    final business =
+                        ref.read(currentBusinessProvider).value;
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      builder: (_) => PrintSheet(
+                        storeName: business?.name ?? 'NotaKit',
+                        sale: s,
+                        lines: data.lines,
+                        customerName: null,
+                        paymentLabel:
+                            s.paidTotalMinor > 0 ? 'TUNAI/KREDIT' : '-',
+                        footerNote: business?.footerNote,
+                      ),
+                    );
+                  },
+                ),
               if (s.status != 'voided')
                 OutlinedButton.icon(
                   icon: const Icon(Icons.block_outlined),
