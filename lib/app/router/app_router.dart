@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/dashboard/dashboard_screen.dart';
-import '../../features/products/products_screen.dart';
+import '../../features/customers/presentation/customers_screen.dart';
+import '../../features/customers/presentation/simple_party_screen.dart';
+import '../../features/products/presentation/product_detail_screen.dart';
+import '../../features/products/presentation/product_form_screen.dart';
+import '../../features/products/presentation/products_screen.dart';
 import '../../features/reports/reports_screen.dart';
 import '../../features/sales/sales_screen.dart';
 import '../../features/settings/more_menu_screen.dart';
+import '../../features/settings/presentation/references_screen.dart';
 
 /// App routes. Bottom navigation has exactly 5 destinations (DESAIN.md §8):
 /// Beranda, Penjualan, Produk, Laporan, Lainnya.
@@ -38,6 +43,26 @@ final GoRouter appRouter = GoRouter(
           GoRoute(
             path: '/products',
             builder: (context, state) => const ProductsScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                builder: (context, state) => const ProductFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) => ProductDetailScreen(
+                  productId: int.parse(state.pathParameters['id']!),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (context, state) => ProductFormScreen(
+                      productId: int.parse(state.pathParameters['id']!),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ]),
         StatefulShellBranch(routes: [
@@ -50,6 +75,26 @@ final GoRouter appRouter = GoRouter(
           GoRoute(
             path: '/more',
             builder: (context, state) => const MoreMenuScreen(),
+            routes: [
+              GoRoute(
+                path: 'customers',
+                builder: (context, state) => const CustomersScreen(),
+              ),
+              GoRoute(
+                path: 'suppliers',
+                builder: (context, state) =>
+                    const SimplePartyScreen(isSupplier: true),
+              ),
+              GoRoute(
+                path: 'salesmen',
+                builder: (context, state) =>
+                    const SimplePartyScreen(isSupplier: false),
+              ),
+              GoRoute(
+                path: 'references',
+                builder: (context, state) => const ReferencesScreen(),
+              ),
+            ],
           ),
         ]),
       ],
