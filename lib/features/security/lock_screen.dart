@@ -17,14 +17,15 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   bool _busy = false;
 
   void _onDigit(String digit) {
-    if (_busy || _pin.length >= 8) {
+    if (_busy || _pin.length >= 6) {
       return;
     }
     setState(() {
       _error = null;
       _pin += digit;
     });
-    if (_pin.length >= 4) {
+    // PIN is always exactly 6 digits (D-023) — submit when complete.
+    if (_pin.length == 6) {
       _tryUnlock();
     }
   }

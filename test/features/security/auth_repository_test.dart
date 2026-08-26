@@ -68,13 +68,24 @@ void main() {
     );
   });
 
-  test('PIN validation rejects short/non-numeric pins', () {
+  test('PIN validation rejects non-6-digit pins', () {
+    // Terlalu pendek (4 digit — aturan baru: tepat 6).
     expect(
-      () => repo.onboard(ownerName: 'A', businessName: 'T', pin: '123'),
+      () => repo.onboard(ownerName: 'A', businessName: 'T', pin: '1234'),
       throwsArgumentError,
     );
     expect(
-      () => repo.onboard(ownerName: 'A', businessName: 'T', pin: '12ab'),
+      () => repo.onboard(ownerName: 'A', businessName: 'T', pin: '12345'),
+      throwsArgumentError,
+    );
+    // Kelebihan digit.
+    expect(
+      () => repo.onboard(ownerName: 'A', businessName: 'T', pin: '1234567'),
+      throwsArgumentError,
+    );
+    // Bukan angka.
+    expect(
+      () => repo.onboard(ownerName: 'A', businessName: 'T', pin: '12ab56'),
       throwsArgumentError,
     );
   });

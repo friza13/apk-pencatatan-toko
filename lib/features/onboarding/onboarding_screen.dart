@@ -42,8 +42,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       case 1:
         return true; // data kosong adalah pilihan default
       default:
-        return _pin.text.length >= 4 &&
-            _pin.text == _pinConfirm.text;
+        return _pin.text.length == 6 && _pin.text == _pinConfirm.text;
     }
   }
 
@@ -162,9 +161,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 controller: _pin,
                 obscureText: true,
                 keyboardType: TextInputType.number,
-                maxLength: 8,
+                maxLength: 6,
                 decoration:
-                    const InputDecoration(labelText: 'PIN (4-8 digit)'),
+                    const InputDecoration(labelText: 'PIN (6 digit)'),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
@@ -179,8 +178,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'PIN dipakai untuk membuka aplikasi. Data tersimpan '
-                'terenkripsi di perangkat ini.',
+                'PIN 6 digit dipakai untuk membuka aplikasi, seperti PIN '
+                'bank. Data tersimpan terenkripsi di perangkat ini.',
                 style: theme.textTheme.bodySmall,
               ),
             ],

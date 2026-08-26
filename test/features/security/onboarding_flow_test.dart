@@ -84,9 +84,9 @@ void main() {
     await tester.tap(find.text('Lanjut'));
     await tester.pumpAndSettle();
 
-    // Step 3 — PIN.
+    // Step 3 — PIN (tepat 6 digit, D-023).
     await tester.enterText(
-      find.widgetWithText(TextField, 'PIN (4-8 digit)'),
+      find.widgetWithText(TextField, 'PIN (6 digit)'),
       '123456',
     );
     await tester.pump();
@@ -121,12 +121,14 @@ void main() {
 
     expect(find.text('Masukkan PIN untuk membuka'), findsOneWidget);
 
-    await tester.tap(find.text('9').last);
-    await tester.pump();
-    await tester.tap(find.text('9').last);
-    await tester.pump();
-    await tester.tap(find.text('9').last);
-    await tester.pump();
+    // PIN 6 digit: auto-submit hanya setelah digit ke-6.
+    for (final d in ['9', '9', '9', '9', '9']) {
+      await tester.tap(find.text(d).last);
+      await tester.pump();
+    }
+    // Belum submit di 5 digit — tidak ada pesan error.
+    expect(find.text('PIN salah. Coba lagi.'), findsNothing);
+
     await tester.tap(find.text('9').last);
     await tester.pumpAndSettle();
 

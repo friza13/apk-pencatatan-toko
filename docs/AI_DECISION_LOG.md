@@ -333,3 +333,17 @@ seluruh penyimpangan sadar dari ERD asli saat implementasi P1.
 
 **Consequence:** Setiap delta di atas bersifat final untuk schema v1; backup `.nkb`
 menyimpan schema_version=1 terhadap struktur ini.
+
+---
+
+## D-023 — PIN selalu tepat 6 digit (keputusan owner)
+
+**Context:** Bug UX: lock screen auto-submit di 4 digit sementara PIN onboarding boleh 4-8,
+membuat PIN terasa "mengetik sendiri". Owner memutuskan menyamai standar PIN bank.
+
+**Decision:** PAN = **tepat 6 digit angka** di seluruh aplikasi (onboarding, lock screen,
+ganti PIN). Validasi `AuthRepository._validatePin` menolak selain 6 digit angka.
+LockScreen auto-submit hanya saat `_pin.length == 6`; indikator titik tetap 6.
+
+**Consequences:** Test repository/controller/widget diperbarui; pesan validasi:
+"PIN harus tepat 6 digit angka".

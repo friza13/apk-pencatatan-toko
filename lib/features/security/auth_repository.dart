@@ -145,9 +145,10 @@ class AuthRepository {
   }
 
   void _validatePin(String pin) {
-    final ok = pin.length >= 4 && pin.length <= 8 && _digitsOnly(pin);
+    // Owner decision (D-023): PIN is always exactly 6 digits, like bank PINs.
+    final ok = pin.length == 6 && _digitsOnly(pin);
     if (!ok) {
-      throw ArgumentError('PIN harus 4-8 digit angka');
+      throw ArgumentError('PIN harus tepat 6 digit angka');
     }
   }
 
