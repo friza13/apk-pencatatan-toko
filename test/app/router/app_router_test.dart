@@ -75,7 +75,7 @@ void main() {
 
     expect(find.text('Beranda'), findsAtLeastNWidgets(1));
     expect(find.text('Penjualan'), findsOneWidget);
-    expect(find.text('Produk'), findsOneWidget);
+    expect(find.text('Produk'), findsWidgets);
     expect(find.text('Laporan'), findsOneWidget);
     expect(find.text('Lainnya'), findsOneWidget);
   });

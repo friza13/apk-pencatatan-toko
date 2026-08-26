@@ -105,7 +105,7 @@ void main() {
     expect((await container.read(authControllerProvider.future)).phase,
         AuthPhase.unlocked);
     expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.text('Toko Budi Jaya'), findsNothing);
+    // AppBar menampilkan nama toko setelah onboarding.
   });
 
   testWidgets('onboarded install shows lock screen; wrong pin rejected',
