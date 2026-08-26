@@ -376,6 +376,7 @@ Setiap checkpoint: `flutter analyze` ✓, `flutter test` ✓, `flutter build apk
 | 2026-08-26 | Task 0–2 (git init, docs, flutter create) | ✓ | `4a3dae8` |
 | 2026-08-26 | P0 Foundation + CHECKPOINT | analyze 0 issue • test 11/11 • apk debug ✓ | `34f4b8f` |
 | 2026-08-26 | SPIKE SQLCipher+Drift — **PASS** | 9/9 integration test @ emulator • KDF benchmark selesai → lihat `docs/SPIKE_REPORT.md`, keputusan D-019/D-020 | `38f05e9` |
-| 2026-08-26 | P1 Database — **PASS** | Schema v1 (36 tabel) • DAO/constraint tests di host • analyze 0 • test 35+ pass • apk ✓ → delta terdokumentasi D-021 | (commit P1) |
+| 2026-08-26 | P1 Database — **PASS** | Schema v1 (36 tabel) • DAO/constraint tests di host • analyze 0 • test 35+ pass • apk ✓ → delta terdokumentasi D-021 | `0df080a` |
+| 2026-08-26 | P2 Core domain — **PASS** | Qty, MoneyPolicy (D-011 penuh), PricingEngine (FR-PRICE-001), BusinessClock (D-012) • 41 domain tests hijau (total 76+) | `6edf686`,`648bcdf`,`81cada9` |
 
-**Status berikutnya: CHECKPOINT P1 lapor ke owner → P2 Core domain.**
+**Status berikutnya: CHECKPOINT P2 lapor ke owner → P3 Auth & Store.**
