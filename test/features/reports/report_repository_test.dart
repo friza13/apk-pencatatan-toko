@@ -9,6 +9,7 @@ import 'package:notakit/features/products/data/reference_repository.dart';
 import 'package:notakit/features/reports/data/report_repository.dart';
 import 'package:notakit/features/customers/data/party_repositories.dart';
 import 'package:notakit/features/sales/data/sales_service.dart';
+import 'package:notakit/features/sales/data/sales_return_service.dart';
 
 void main() {
   late AppDatabase db;
@@ -185,6 +186,51 @@ void main() {
       endUtcMillis: e,
     );
     expect(sum.totalMinor, 0);
+  });
+
+  test('sales return is excluded from sales totals and profit', () async {
+    final out = await SalesService(db).checkout(
+      CheckoutInput(
+        lines: [
+          SaleLineInput(
+            productId: barangId,
+            qtyMicro: 1000000,
+            unitPriceMinor: 12000,
+          ),
+        ],
+        accountId: kasId,
+        paidNowMinor: 12000,
+      ),
+    );
+    final line = (await db.select(db.saleLines).get()).single;
+    await SalesReturnService(db).createReturn(
+      SalesReturnInput(
+        saleId: out.saleId,
+        lines: [
+          SalesReturnLineInput(saleLineId: line.id, qtyBaseMicro: 1000000),
+        ],
+        reason: 'retur',
+      ),
+    );
+    final offset = BusinessClock.offsetMinutesFor('Asia/Jakarta');
+    final (s, e) = BusinessClock.dayRangeUtcMillis(
+      DateTime.now().toUtc().millisecondsSinceEpoch,
+      offset,
+    );
+    final sum = await reports.salesSummary(
+      businessId: businessId,
+      startUtcMillis: s,
+      endUtcMillis: e,
+    );
+    expect(sum.totalMinor, 0);
+    expect(sum.profitMinor, 0);
+  });
+
+  test('stock valuation preserves fractional quantity', () async {
+    await (db.update(db.products)..where((t) => t.id.equals(barangId))).write(
+      const ProductsCompanion(stockQuantityMicro: Value(500000)),
+    );
+    expect(await reports.stockValuationMinor(businessId), 4000);
   });
 
   test('topProducts aggregates by snapshot name', () async {

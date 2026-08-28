@@ -34,6 +34,7 @@ abstract final class ErrorCodes {
   static const invalidPayment = 'INVALID_PAYMENT';
   static const customerRequiredForCredit = 'CUSTOMER_REQUIRED_FOR_CREDIT';
   static const saleCannotVoid = 'SALE_CANNOT_VOID';
+  static const saleCannotReturn = 'SALE_CANNOT_RETURN';
   static const receivableLimitExceeded = 'RECEIVABLE_LIMIT_EXCEEDED';
   static const duplicateTransaction = 'DUPLICATE_TRANSACTION';
   static const backupInvalid = 'BACKUP_INVALID';

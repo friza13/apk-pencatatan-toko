@@ -60,25 +60,24 @@ class ReportRepository {
         return BusinessClock.dayRangeUtcMillis(now, offsetMinutes);
       case ReportPeriod.yesterday:
         final (s, _) = BusinessClock.dayRangeUtcMillis(
-            now - BusinessClock.millisPerDay, offsetMinutes);
+          now - BusinessClock.millisPerDay,
+          offsetMinutes,
+        );
         return (s, s + BusinessClock.millisPerDay);
       case ReportPeriod.last7:
       case ReportPeriod.last30:
         final days = period == ReportPeriod.last7 ? 7 : 30;
-        final (todayStart, todayEnd) =
-            BusinessClock.dayRangeUtcMillis(now, offsetMinutes);
-        return (
-          todayStart - days * BusinessClock.millisPerDay,
-          todayEnd
+        final (todayStart, todayEnd) = BusinessClock.dayRangeUtcMillis(
+          now,
+          offsetMinutes,
         );
+        return (todayStart - days * BusinessClock.millisPerDay, todayEnd);
       case ReportPeriod.thisMonth:
-        final localNow = DateTime.now()
-            .toUtc()
-            .add(Duration(minutes: offsetMinutes));
-        final firstLocal =
-            DateTime.utc(localNow.year, localNow.month);
-        final start = firstLocal.millisecondsSinceEpoch -
-            offsetMinutes * 60000;
+        final localNow = DateTime.now().toUtc().add(
+          Duration(minutes: offsetMinutes),
+        );
+        final firstLocal = DateTime.utc(localNow.year, localNow.month);
+        final start = firstLocal.millisecondsSinceEpoch - offsetMinutes * 60000;
         return (start, now + 1);
     }
   }
@@ -88,13 +87,15 @@ class ReportRepository {
     required int startUtcMillis,
     required int endUtcMillis,
   }) async {
-    final salesRows = await (_db.select(_db.sales)
-          ..where((t) =>
-              t.businessId.equals(businessId) &
-              t.status.isIn(_countedStatuses) &
-              t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
-              t.createdAt.isSmallerThanValue(endUtcMillis)))
-        .get();
+    final salesRows =
+        await (_db.select(_db.sales)..where(
+              (t) =>
+                  t.businessId.equals(businessId) &
+                  t.status.isIn(_countedStatuses) &
+                  t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
+                  t.createdAt.isSmallerThanValue(endUtcMillis),
+            ))
+            .get();
 
     var total = 0;
     var paid = 0;
@@ -104,18 +105,42 @@ class ReportRepository {
       paid += s.paidTotalMinor;
       due += s.dueTotalMinor;
     }
+    final returns =
+        await (_db.select(_db.salesReturns)..where(
+              (t) =>
+                  t.businessId.equals(businessId) &
+                  t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
+                  t.createdAt.isSmallerThanValue(endUtcMillis),
+            ))
+            .get();
+    total -= returns.fold<int>(0, (sum, item) => sum + item.totalMinor);
 
     // Gross profit: sum(line_total - qty_base x cost_snapshot).
     var profit = 0;
     if (salesRows.isNotEmpty) {
       final ids = salesRows.map((s) => s.id).toList();
-      final lines = await (_db.select(_db.saleLines)
-            ..where((t) => t.saleId.isIn(ids)))
-          .get();
+      final lines = await (_db.select(
+        _db.saleLines,
+      )..where((t) => t.saleId.isIn(ids))).get();
       for (final l in lines) {
-        final cogs = (l.qtyBaseMicro * l.costPriceSnapshotMinor) ~/
-            quantityScale;
+        final cogs =
+            (l.qtyBaseMicro * l.costPriceSnapshotMinor) ~/ quantityScale;
         profit += l.lineTotalMinor - cogs;
+      }
+      final returnIds = returns.map((item) => item.id).toList();
+      if (returnIds.isNotEmpty) {
+        final returnLines = await (_db.select(
+          _db.salesReturnLines,
+        )..where((t) => t.salesReturnId.isIn(returnIds))).get();
+        for (final line in returnLines) {
+          final original = await (_db.select(
+            _db.saleLines,
+          )..where((t) => t.id.equals(line.saleLineId))).getSingle();
+          final cogs =
+              (line.qtyBaseMicro * original.costPriceSnapshotMinor) ~/
+              quantityScale;
+          profit -= line.amountMinor - cogs;
+        }
       }
     }
 
@@ -129,8 +154,7 @@ class ReportRepository {
   }
 
   /// Daily totals for the last [days] days ending today (bar chart source).
-  Future<List<DayTotal>>
-      dailyTotals({
+  Future<List<DayTotal>> dailyTotals({
     required int businessId,
     required int days,
     required int offsetMinutes,
@@ -141,21 +165,24 @@ class ReportRepository {
 
     for (var d = days - 1; d >= 0; d--) {
       final (s, e) = BusinessClock.dayRangeUtcMillis(
-          now - d * BusinessClock.millisPerDay, offsetMinutes);
+        now - d * BusinessClock.millisPerDay,
+        offsetMinutes,
+      );
       final sumExp = _db.sales.grandTotalMinor.sum();
 
       final query = _db.selectOnly(_db.sales)
         ..addColumns([sumExp])
-        ..where(_db.sales.businessId.equals(businessId) &
-            _db.sales.status.isIn(_countedStatuses) &
-            _db.sales.createdAt.isBiggerOrEqualValue(s) &
-            _db.sales.createdAt.isSmallerThanValue(e));
+        ..where(
+          _db.sales.businessId.equals(businessId) &
+              _db.sales.status.isIn(_countedStatuses) &
+              _db.sales.createdAt.isBiggerOrEqualValue(s) &
+              _db.sales.createdAt.isSmallerThanValue(e),
+        );
 
       final row = await query.getSingle();
       final total = row.read(sumExp) ?? 0;
       result.add((
-        dayLocalStartUtc:
-            DateTime.fromMillisecondsSinceEpoch(s, isUtc: true),
+        dayLocalStartUtc: DateTime.fromMillisecondsSinceEpoch(s, isUtc: true),
         totalMinor: total,
       ));
     }
@@ -170,11 +197,13 @@ class ReportRepository {
     int limit = 5,
   }) async {
     final salesIdsQuery = _db.select(_db.sales)
-          ..where((t) =>
-              t.businessId.equals(businessId) &
-              t.status.isIn(_countedStatuses) &
-              t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
-              t.createdAt.isSmallerThanValue(endUtcMillis));
+      ..where(
+        (t) =>
+            t.businessId.equals(businessId) &
+            t.status.isIn(_countedStatuses) &
+            t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
+            t.createdAt.isSmallerThanValue(endUtcMillis),
+      );
     final salesIds = (await salesIdsQuery.get()).map((s) => s.id).toList();
     if (salesIds.isEmpty) return [];
 
@@ -189,27 +218,68 @@ class ReportRepository {
       ..limit(limit);
 
     final rows = await query.get();
-    return rows
-        .map((r) => TopProductRow(
-              name: r.read(_db.saleLines.productNameSnapshot)!,
-              qtyBaseMicro: r.read(qtySum) ?? 0,
-              totalMinor: r.read(totSum) ?? 0,
+    final result = rows
+        .map(
+          (r) => TopProductRow(
+            name: r.read(_db.saleLines.productNameSnapshot)!,
+            qtyBaseMicro: r.read(qtySum) ?? 0,
+            totalMinor: r.read(totSum) ?? 0,
+          ),
+        )
+        .toList();
+    final returns =
+        await (_db.select(_db.salesReturns)..where(
+              (t) =>
+                  t.businessId.equals(businessId) &
+                  t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
+                  t.createdAt.isSmallerThanValue(endUtcMillis),
             ))
+            .get();
+    if (returns.isEmpty) return result;
+    final returnLines =
+        await (_db.select(_db.salesReturnLines)..where(
+              (t) =>
+                  t.salesReturnId.isIn(returns.map((item) => item.id).toList()),
+            ))
+            .get();
+    final returnedByName = <String, ({int qty, int total})>{};
+    for (final line in returnLines) {
+      final original = await (_db.select(
+        _db.saleLines,
+      )..where((t) => t.id.equals(line.saleLineId))).getSingle();
+      final current = returnedByName[original.productNameSnapshot];
+      returnedByName[original.productNameSnapshot] = (
+        qty: (current?.qty ?? 0) + line.qtyBaseMicro,
+        total: (current?.total ?? 0) + line.amountMinor,
+      );
+    }
+    return result
+        .map((item) {
+          final returned = returnedByName[item.name];
+          if (returned == null) return item;
+          return TopProductRow(
+            name: item.name,
+            qtyBaseMicro: item.qtyBaseMicro - returned.qty,
+            totalMinor: item.totalMinor - returned.total,
+          );
+        })
+        .where((item) => item.qtyBaseMicro > 0 || item.totalMinor > 0)
         .toList();
   }
 
   /// Stock valuation from cached balances at current WAC.
   Future<int> stockValuationMinor(int businessId) async {
-    final products = await (_db.select(_db.products)
-          ..where((t) =>
-              t.businessId.equals(businessId) &
-              t.trackStock.equals(true) &
-              t.type.equals('goods')))
-        .get();
+    final products =
+        await (_db.select(_db.products)..where(
+              (t) =>
+                  t.businessId.equals(businessId) &
+                  t.trackStock.equals(true) &
+                  t.type.equals('goods'),
+            ))
+            .get();
     var total = 0;
     for (final p in products) {
-      final qtyUnits = p.stockQuantityMicro ~/ quantityScale;
-      total += qtyUnits * p.costPriceMinor;
+      total += (p.stockQuantityMicro * p.costPriceMinor) ~/ quantityScale;
     }
     return total;
   }
@@ -219,26 +289,31 @@ class ReportRepository {
     final sum = _db.receivables.remainingAmountMinor.sum();
     final query = _db.selectOnly(_db.receivables)
       ..addColumns([sum])
-      ..where(_db.receivables.businessId.equals(businessId) &
-          _db.receivables.remainingAmountMinor.isBiggerThanValue(0));
+      ..where(
+        _db.receivables.businessId.equals(businessId) &
+            _db.receivables.remainingAmountMinor.isBiggerThanValue(0),
+      );
     final row = await query.getSingle();
     return row.read(sum) ?? 0;
   }
 
   /// Low-stock product names for dashboard insight.
   Future<List<String>> lowStockNames(int businessId, {int limit = 3}) async {
-    final rows = await (_db.select(_db.products)
-          ..where((t) =>
-              t.businessId.equals(businessId) &
-              t.trackStock.equals(true) &
-              t.isActive.equals(true))
-          ..orderBy([(t) => OrderingTerm.asc(t.stockQuantityMicro)])
-          ..limit(limit))
-        .get();
+    final rows =
+        await (_db.select(_db.products)
+              ..where(
+                (t) =>
+                    t.businessId.equals(businessId) &
+                    t.trackStock.equals(true) &
+                    t.isActive.equals(true),
+              )
+              ..orderBy([(t) => OrderingTerm.asc(t.stockQuantityMicro)])
+              ..limit(limit))
+            .get();
     return rows
-        .where((p) =>
-            p.minStockMicro > 0 &&
-            p.stockQuantityMicro <= p.minStockMicro)
+        .where(
+          (p) => p.minStockMicro > 0 && p.stockQuantityMicro <= p.minStockMicro,
+        )
         .map((p) => p.name)
         .toList();
   }
