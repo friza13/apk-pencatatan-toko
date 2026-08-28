@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/money/money.dart';
 import '../../../core/units/quantity.dart';
+import '../../../core/error/failures.dart';
+import '../../../database/app_database.dart';
 import '../../products/controllers/products_providers.dart';
 import '../../printing/presentation/print_sheet.dart';
 import '../controllers/sales_providers.dart';
+import '../data/sales_return_service.dart';
 
 /// Detail nota + void action.
 class SaleDetailScreen extends ConsumerWidget {
@@ -30,20 +33,28 @@ class SaleDetailScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(s.number ?? '-', style: Theme.of(context).textTheme.headlineSmall),
-                _StatusChip(status: s.status),
-              ]),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    s.number ?? '-',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  _StatusChip(status: s.status),
+                ],
+              ),
               const SizedBox(height: 8),
-              Text('Total: ${formatMinor(s.grandTotalMinor)}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Text(
+                'Total: ${formatMinor(s.grandTotalMinor)}',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
               if (s.dueTotalMinor > 0)
-                Text('Piutang: ${formatMinor(s.dueTotalMinor)}',
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error)),
+                Text(
+                  'Piutang: ${formatMinor(s.dueTotalMinor)}',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               const SizedBox(height: 16),
               const Divider(),
               for (final l in data.lines)
@@ -52,10 +63,10 @@ class SaleDetailScreen extends ConsumerWidget {
                   dense: true,
                   title: Text(l.productNameSnapshot),
                   subtitle: Text(
-                      '${microToDecimalString(l.qtyMicro)} x '
-                      '${formatMinor(l.unitPriceMinor)}'),
-                  trailing:
-                      Text(formatMinor(l.lineTotalMinor)),
+                    '${microToDecimalString(l.qtyMicro)} x '
+                    '${formatMinor(l.unitPriceMinor)}',
+                  ),
+                  trailing: Text(formatMinor(l.lineTotalMinor)),
                 ),
               const Divider(),
               _kv(context, 'Subtotal', formatMinor(s.subtotalMinor)),
@@ -69,30 +80,36 @@ class SaleDetailScreen extends ConsumerWidget {
               if (s.note != null && s.note!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: Text(s.note!,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  child: Text(
+                    s.note!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
               const SizedBox(height: 24),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.receipt_outlined),
+                label: const Text('Cetak / PDF'),
+                onPressed: () {
+                  final business = ref.read(currentBusinessProvider).value;
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => PrintSheet(
+                      storeName: business?.name ?? 'NotaKit',
+                      sale: s,
+                      lines: data.lines,
+                      customerName: null,
+                      paymentLabel: s.paidTotalMinor > 0 ? 'TUNAI/KREDIT' : '-',
+                      footerNote: business?.footerNote,
+                    ),
+                  );
+                },
+              ),
+              if (s.status != 'voided')
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.receipt_outlined),
-                  label: const Text('Cetak / PDF'),
-                  onPressed: () {
-                    final business =
-                        ref.read(currentBusinessProvider).value;
-                    showModalBottomSheet<void>(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (_) => PrintSheet(
-                        storeName: business?.name ?? 'NotaKit',
-                        sale: s,
-                        lines: data.lines,
-                        customerName: null,
-                        paymentLabel:
-                            s.paidTotalMinor > 0 ? 'TUNAI/KREDIT' : '-',
-                        footerNote: business?.footerNote,
-                      ),
-                    );
-                  },
+                  icon: const Icon(Icons.assignment_return_outlined),
+                  label: const Text('Retur Barang'),
+                  onPressed: () => _returnDialog(context, ref, s, data.lines),
                 ),
               if (s.status != 'voided')
                 OutlinedButton.icon(
@@ -116,22 +133,29 @@ class SaleDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Void Nota?'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Stok akan dikembalikan. Tindakan ini tercatat di audit.'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: reasonC,
-            autofocus: true,
-            decoration: const InputDecoration(labelText: 'Alasan *'),
-          ),
-        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Stok akan dikembalikan. Tindakan ini tercatat di audit.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonC,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Alasan *'),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Void')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Void'),
+          ),
         ],
       ),
     );
@@ -149,13 +173,113 @@ class SaleDetailScreen extends ConsumerWidget {
       ..invalidate(productsControllerProvider);
   }
 
-  Widget _kv(BuildContext context, String k, String v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text(k), Text(v)],
+  Future<void> _returnDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Sale sale,
+    List<SaleLine> lines,
+  ) async {
+    final quantities = <int, int>{};
+    final reasonC = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          title: const Text('Retur Barang'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final line in lines)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${line.productNameSnapshot}\n'
+                          'Maks. ${microToDecimalString(line.qtyBaseMicro)}',
+                        ),
+                      ),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Qty'),
+                          onChanged: (value) => quantities[line.id] =
+                              (int.tryParse(value) ?? 0) * quantityScale,
+                        ),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: reasonC,
+                  decoration: const InputDecoration(labelText: 'Alasan *'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Proses Retur'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final selected = [
+      for (final line in lines)
+        if ((quantities[line.id] ?? 0) > 0)
+          SalesReturnLineInput(
+            saleLineId: line.id,
+            qtyBaseMicro: quantities[line.id]!,
+          ),
+    ];
+    if (selected.isEmpty || reasonC.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih item dan isi alasan retur.')),
+      );
+      return;
+    }
+    try {
+      final service = await ref.read(salesReturnServiceProvider.future);
+      final result = await service.createReturn(
+        SalesReturnInput(
+          saleId: sale.id,
+          lines: selected,
+          reason: reasonC.text.trim(),
         ),
       );
+      ref
+        ..invalidate(saleDetailProvider(sale.id))
+        ..invalidate(salesListProvider)
+        ..invalidate(productsControllerProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Retur ${result.number} tersimpan.')),
+        );
+      }
+    } on Failure catch (failure) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+      }
+    }
+  }
+
+  Widget _kv(BuildContext context, String k, String v) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [Text(k), Text(v)],
+    ),
+  );
 }
 
 class _StatusChip extends StatelessWidget {
@@ -167,14 +291,17 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final map = {
       'paid': ('Lunas', Theme.of(context).colorScheme.secondaryContainer),
-      'partially_paid':
-          ('Sebagian', const Color(0xFFFFFBEB)),
+      'partially_paid': ('Sebagian', const Color(0xFFFFFBEB)),
       'credit': ('Kredit', const Color(0xFFEFF6FF)),
       'voided': ('VOID', Theme.of(context).colorScheme.errorContainer),
-      'confirmed': ('Terkonfirmasi',
-          Theme.of(context).colorScheme.primaryContainer),
+      'confirmed': (
+        'Terkonfirmasi',
+        Theme.of(context).colorScheme.primaryContainer,
+      ),
     };
-    final entry = map[status] ?? (status, Theme.of(context).colorScheme.surfaceContainerHighest);
+    final entry =
+        map[status] ??
+        (status, Theme.of(context).colorScheme.surfaceContainerHighest);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
