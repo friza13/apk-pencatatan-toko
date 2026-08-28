@@ -79,34 +79,60 @@ Future<void> showStockActionSheet({
                   ),
                 ),
                 const SizedBox(height: 12),
-                SegmentedButton<StockAction>(
-                  segments: [
-                    ButtonSegment(
-                      value: StockAction.adjustIn,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      avatar: const Icon(Icons.add, size: 18),
                       label: const Text('Tambah'),
-                      icon: const Icon(Icons.add),
+                      selected: selectedAction == StockAction.adjustIn,
+                      onSelected: (s) {
+                        if (s) {
+                          setSheetState(
+                            () => selectedAction = StockAction.adjustIn,
+                          );
+                        }
+                      },
                     ),
-                    ButtonSegment(
-                      value: StockAction.adjustOut,
+                    ChoiceChip(
+                      avatar: const Icon(Icons.remove, size: 18),
                       label: const Text('Kurang'),
-                      icon: const Icon(Icons.remove),
+                      selected: selectedAction == StockAction.adjustOut,
+                      onSelected: (s) {
+                        if (s) {
+                          setSheetState(
+                            () => selectedAction = StockAction.adjustOut,
+                          );
+                        }
+                      },
                     ),
-                    ButtonSegment(
-                      value: StockAction.opname,
+                    ChoiceChip(
+                      avatar: const Icon(Icons.inventory_2_outlined, size: 18),
                       label: const Text('Opname'),
-                      icon: const Icon(Icons.inventory_2_outlined),
+                      selected: selectedAction == StockAction.opname,
+                      onSelected: (s) {
+                        if (s) {
+                          setSheetState(
+                            () => selectedAction = StockAction.opname,
+                          );
+                        }
+                      },
                     ),
                     if (!hasOpening)
-                      ButtonSegment(
-                        value: StockAction.opening,
-                        label: const Text('Awal'),
-                        icon: const Icon(Icons.flag_outlined),
+                      ChoiceChip(
+                        avatar: const Icon(Icons.flag_outlined, size: 18),
+                        label: const Text('Stok Awal'),
+                        selected: selectedAction == StockAction.opening,
+                        onSelected: (s) {
+                          if (s) {
+                            setSheetState(
+                              () => selectedAction = StockAction.opening,
+                            );
+                          }
+                        },
                       ),
                   ],
-                  selected: {selectedAction},
-                  onSelectionChanged: (s) {
-                    setSheetState(() => selectedAction = s.first);
-                  },
                 ),
                 if (variants.isNotEmpty) ...[
                   const SizedBox(height: 12),
