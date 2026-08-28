@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/domain/money_policy.dart';
+import '../../../core/domain/pricing_engine.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/units/quantity.dart';
 import '../../../database/app_database.dart';
@@ -14,10 +15,14 @@ class SaleLineInput {
     this.lineDiscountPercentBp = 0,
     this.lineDiscountFixedMinor = 0,
     this.variantId,
+    this.unitId,
+    this.useWholesale = false,
   });
 
   final int productId;
   final int? variantId;
+  final int? unitId;
+  final bool useWholesale;
   final int qtyMicro;
   final int unitPriceMinor;
   final int lineDiscountPercentBp;
@@ -150,17 +155,122 @@ class SalesService {
           );
         }
 
-        final gross = MoneyPolicy.lineGrossMinor(
-          line.qtyMicro,
-          line.unitPriceMinor,
+        final variant = line.variantId == null
+            ? null
+            : await (_db.select(_db.productVariants)
+                  ..where((t) =>
+                      t.id.equals(line.variantId!) &
+                      t.productId.equals(p.id)))
+                .getSingleOrNull();
+        if (line.variantId != null && variant == null) {
+          throw const Failure(
+            code: ErrorCodes.productNotFound,
+            message: 'Varian produk tidak ditemukan.',
+          );
+        }
+        final soldUnitId = line.unitId ?? p.baseUnitId;
+        var conversionFactorMicro = quantityScale;
+        if (soldUnitId != p.baseUnitId) {
+          final productUnit = await (_db.select(_db.productUnits)
+                ..where((t) =>
+                    t.productId.equals(p.id) & t.unitId.equals(soldUnitId)))
+              .getSingleOrNull();
+          if (productUnit == null) {
+            throw const Failure(
+              code: ErrorCodes.invalidQuantity,
+              message: 'Konversi unit produk tidak ditemukan.',
+            );
+          }
+          conversionFactorMicro = productUnit.conversionToBaseMicro;
+        }
+        final customer = input.customerId == null
+            ? null
+            : await (_db.select(_db.customers)
+                  ..where((t) => t.id.equals(input.customerId!)))
+                .getSingleOrNull();
+        final customerType = customer?.customerTypeId == null
+            ? null
+            : await (_db.select(_db.customerTypes)
+                  ..where((t) => t.id.equals(customer!.customerTypeId!)))
+                .getSingleOrNull();
+        final candidates = <PriceCandidate>[];
+        if (customer != null) {
+          final rows = await (_db.select(_db.customerPrices)
+                ..where((t) =>
+                    t.customerId.equals(customer.id) &
+                    t.productId.equals(p.id)))
+              .get();
+          candidates.addAll(rows.map((row) => PriceCandidate(
+                priceMinor: row.priceMinor,
+                source: PriceSource.customerOverride,
+                variantId: row.variantId,
+                unitId: row.unitId,
+                minQtyMicro: row.minQtyMicro,
+                validFromMillis: row.validFrom.millisecondsSinceEpoch,
+                validToMillis: row.validTo?.millisecondsSinceEpoch,
+              )));
+        }
+        final tierRows = await (_db.select(_db.productPrices)
+              ..where((t) => t.productId.equals(p.id)))
+            .get();
+        for (final row in tierRows) {
+          final tier = row.priceTierId == null
+              ? null
+              : await (_db.select(_db.priceTiers)
+                    ..where((t) => t.id.equals(row.priceTierId!)))
+                  .getSingleOrNull();
+          if (row.priceTierId != null && customerType?.defaultPriceTierId != row.priceTierId) {
+            continue;
+          }
+          if (row.customerTypeId != null && customer?.customerTypeId != row.customerTypeId) {
+            continue;
+          }
+          candidates.add(PriceCandidate(
+            priceMinor: row.priceMinor,
+            source: PriceSource.tierOrCustomerType,
+            variantId: row.variantId,
+            unitId: row.unitId,
+            minQtyMicro: row.minQtyMicro,
+            validFromMillis: row.validFrom.millisecondsSinceEpoch,
+            validToMillis: row.validTo?.millisecondsSinceEpoch,
+            tierPriority: tier?.priority ?? 100,
+          ));
+        }
+        final unitOverride = soldUnitId == p.baseUnitId
+            ? null
+            : (await (_db.select(_db.productUnits)
+                    ..where((t) =>
+                        t.productId.equals(p.id) &
+                        t.unitId.equals(soldUnitId)))
+                .getSingle())
+              .salePriceOverrideMinor;
+        final resolvedPrice = PricingEngine.resolve(
+          request: PricingRequest(
+            nowMillis: DateTime.now().toUtc().millisecondsSinceEpoch,
+            quantityMicro: line.qtyMicro,
+            productId: p.id,
+            variantId: line.variantId,
+            unitId: soldUnitId,
+            customerTierId: customerType?.defaultPriceTierId,
+            customerTypeId: customer?.customerTypeId,
+            useWholesale: line.useWholesale,
+          ),
+          candidates: candidates,
+          standardPriceMinor: unitOverride ??
+              variant?.salePriceMinor ??
+              p.salePriceMinor,
+          wholesalePriceMinor: p.wholesalePriceMinor,
         );
+        final unitPriceMinor = resolvedPrice.unitPriceMinor;
+        final gross = MoneyPolicy.lineGrossMinor(line.qtyMicro, unitPriceMinor);
         final net = MoneyPolicy.lineNetMinor(
           gross,
           line.lineDiscountPercentBp,
           line.lineDiscountFixedMinor,
         );
 
-        final qtyBaseMicro = line.qtyMicro; // base-unit cart (MVP)
+        final qtyBaseMicro =
+            (line.qtyMicro * conversionFactorMicro) ~/ quantityScale;
         if (p.trackStock && p.type == 'goods') {
           if (qtyBaseMicro > p.stockQuantityMicro) {
             throw Failure(
@@ -173,7 +283,7 @@ class SalesService {
 
         final baseUnit = await (_db.select(
           _db.units,
-        )..where((t) => t.id.equals(p.baseUnitId))).getSingle();
+        )..where((t) => t.id.equals(soldUnitId))).getSingle();
 
         prepared.add(
           _PreparedLine(
@@ -182,12 +292,12 @@ class SalesService {
             productNameSnapshot: p.name,
             skuSnapshot: p.sku,
             unitNameSnapshot: baseUnit.code,
-            unitId: p.baseUnitId,
+            unitId: soldUnitId,
             qtyMicro: line.qtyMicro,
             qtyBaseMicro: qtyBaseMicro,
-            unitPriceMinor: line.unitPriceMinor,
+            unitPriceMinor: unitPriceMinor,
             discountMinor: gross - net,
-            costSnapshotMinor: p.costPriceMinor,
+            costSnapshotMinor: variant?.costPriceMinor ?? p.costPriceMinor,
             lineNetMinor: net,
             tracked: p.trackStock && p.type == 'goods',
           ),
@@ -274,7 +384,9 @@ class SalesService {
                 unitNameSnapshot: l.unitNameSnapshot,
                 unitId: Value(l.unitId),
                 qtyMicro: l.qtyMicro,
-                conversionFactorMicro: quantityScale,
+                conversionFactorMicro: l.qtyBaseMicro == 0
+                    ? quantityScale
+                    : (l.qtyBaseMicro * quantityScale) ~/ l.qtyMicro,
                 qtyBaseMicro: l.qtyBaseMicro,
                 unitPriceMinor: l.unitPriceMinor,
                 discountAmountMinor: Value(l.discountMinor),

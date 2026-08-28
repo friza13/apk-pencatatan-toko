@@ -136,6 +136,12 @@ abstract final class PricingEngine {
     if (c.minQtyMicro != null && r.quantityMicro < c.minQtyMicro!) {
       return false;
     }
+    if (c.variantId != null && c.variantId != r.variantId) {
+      return false;
+    }
+    if (c.unitId != null && c.unitId != r.unitId) {
+      return false;
+    }
     if (c.validFromMillis != null && r.nowMillis < c.validFromMillis!) {
       return false;
     }

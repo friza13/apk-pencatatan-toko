@@ -150,6 +150,33 @@ void main() {
       expect(r.unitPriceMinor, 8900);
     });
 
+    test('variant and unit-specific candidates do not leak to other lines', () {
+      final r = PricingEngine.resolve(
+        request: PricingRequest(
+          nowMillis: _now,
+          quantityMicro: 1000000,
+          variantId: 2,
+          unitId: 3,
+        ),
+        candidates: const [
+          PriceCandidate(
+            priceMinor: 7000,
+            source: PriceSource.tierOrCustomerType,
+            variantId: 1,
+            unitId: 3,
+          ),
+          PriceCandidate(
+            priceMinor: 8000,
+            source: PriceSource.tierOrCustomerType,
+            variantId: 2,
+            unitId: 3,
+          ),
+        ],
+        standardPriceMinor: 12000,
+      );
+      expect(r.unitPriceMinor, 8000);
+    });
+
 
   });
 }
