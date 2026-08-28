@@ -274,6 +274,6 @@ serta analyzer diverifikasi ulang pada worktree `mvp-stabilization`.
 Status: **PASS VERIFIED NOW** untuk analyzer, full test suite, debug APK, dan
 Android recovery integration pada worktree. Return/refund application logic
 terverifikasi melalui database-state tests, tetapi dedicated return UI belum
-tersedia melalui detail nota. Idempotency request dan refund multi-payment
-masih deferred sehingga release readiness tetap **conditional**, bukan klaim
-bebas bug. Detail ada di `docs/RECOVERY_NOTES.md`.
+tersedia melalui detail nota. Idempotency request dan refund multi-payment masih **DEFERRED**, bukan bug aktif
+atau blocker MVP. Manual walkthrough return UI dicatat sebagai **NOT VERIFIED**
+QA gap. Detail ada di `docs/RECOVERY_NOTES.md`.

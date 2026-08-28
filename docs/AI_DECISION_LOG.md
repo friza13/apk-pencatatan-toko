@@ -31,6 +31,29 @@ menyediakan pemilik piutang.
 
 **Reason:** Menjaga invariant bahwa setiap receivable memiliki owner.
 
+## D-027 — Kebijakan deferred items dan status verifikasi
+
+**Context:** Beberapa hardening atau QA follow-up tidak termasuk bug aktif atau
+blocker MVP.
+
+**Decision:** Item `DEFERRED` tidak diimplementasikan dan tidak menghambat MVP
+tanpa instruksi eksplisit. Deferred saat ini adalah return idempotency/retry
+safety, refund transaksi dengan banyak metode/akun pembayaran, dan manual
+walkthrough UI return di emulator. Phase 2/3 juga tidak dimulai otomatis.
+
+**Reason:** Menjaga scope MVP, mencegah perubahan schema/architecture tanpa
+kebutuhan, dan memprioritaskan correctness, data integrity, recovery,
+security, regression safety, performance, lalu UX polish.
+
+**Verification language:** Dokumentasi wajib membedakan `VERIFIED NOW`,
+`PASSED PREVIOUSLY`, dan `NOT VERIFIED`. Manual walkthrough yang belum
+dijalankan dicatat sebagai QA gap, bukan PASS.
+
+**Compatibility requirement:** Jika deferred item dikerjakan setelah ada
+instruksi, perubahan harus backward compatible, memakai migration bila
+diperlukan, atomic terhadap inventory/payment/ledger/receivable, memiliki
+regression test, dan tidak mengubah historical transaction secara diam-diam.
+
 ## D-001 — Scope: MVP dulu, Phase 2/3 ditunda
 
 **Context:** PRD memuat fitur sangat luas (restoran, minimarket lanjutan, marketplace). Implementasi semua sekaligus berisiko tinggi.

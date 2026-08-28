@@ -34,6 +34,13 @@ successful return.
 - Return request idempotency and multiple-payment refund allocation require a
   future schema/business-rule decision and remain deferred.
 - Full emulator walkthrough for the return UI remains a release verification
-  follow-up.
-- Phase 2 remains blocked until these limitations are explicitly accepted or
-  implemented.
+  follow-up and is recorded as **NOT VERIFIED**, not as a failed MVP bug.
+- Phase 2 remains a separate future scope and is not started automatically.
+
+## Scope rule
+
+The items above are **DEFERRED**, not active MVP bugs. They must not be
+implemented automatically or treated as MVP blockers without explicit
+instruction. Any future implementation must preserve backward compatibility,
+atomic domain effects, regression coverage, and historical transaction
+immutability.
