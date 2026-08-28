@@ -271,7 +271,8 @@ M3/M4: metadata backup mengambil schema version dari database runtime, flow
 checkout menyediakan pemilihan customer untuk piutang, dan seluruh unit test
 serta analyzer diverifikasi ulang pada worktree `mvp-stabilization`.
 
-Status: **PASS VERIFIED NOW** untuk analyzer dan full test suite pada worktree.
-Android integration return UI dan debug APK pasca-perubahan terakhir belum
-diverifikasi ulang; karenanya release readiness tetap **conditional**, bukan
-klaim bebas bug.
+Status: **PASS VERIFIED NOW** untuk analyzer, full test suite, debug APK, dan
+Android recovery integration pada worktree. Return/refund application logic
+terverifikasi melalui database-state tests, tetapi dedicated return UI belum
+tersedia sehingga release readiness tetap **conditional**, bukan klaim bebas
+bug. Detail ada di `docs/RECOVERY_NOTES.md`.

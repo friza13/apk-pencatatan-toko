@@ -406,3 +406,17 @@ tetapi repository berada pada **MVP recovery gate**. Temuan P0 di
 |---|---|---|
 | 2026-08-28 | Repository audit/read-only | Temuan P0/P1/P2; belum ada perubahan source |
 | 2026-08-28 | Local checkpoint | `af4411a` sebelum recovery work |
+
+### Stabilization execution log
+
+| Tanggal | Milestone | Hasil | Commit |
+|---|---|---|---|
+| 2026-08-28 | Atomic return/refund | Database-state tests pass; stock, finance, receivable, and audit effects are transactional | `b092672` |
+| 2026-08-28 | Pricing and quantity conversion | Checkout resolves variant, unit, customer/tier, quantity break, validity, and snapshots | `3b6a0a4`, `ec996eb` |
+| 2026-08-28 | Backup and restore hardening | Runtime metadata, encrypted probe parity, preview confirmation, malformed/wrong-password guards | `dfe5f87` |
+| 2026-08-28 | Final verification | Analyze pass, 158 tests pass, debug APK pass, Android recovery integration pass | pending docs checkpoint |
+
+**Remaining before release claim:** dedicated return/refund UI, idempotent
+return request key, and multiple-payment refund allocation remain
+`OPEN/DEFERRED`. These are not silently treated as complete. Phase 2 remains
+deferred.
