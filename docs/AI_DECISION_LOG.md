@@ -336,7 +336,7 @@ menyimpan schema_version=1 terhadap struktur ini.
 
 ---
 
-## D-023 — PIN selalu tepat 6 digit (keputusan owner)
+## D-023 ï¿½ PIN selalu tepat 6 digit (keputusan owner)
 
 **Context:** Bug UX: lock screen auto-submit di 4 digit sementara PIN onboarding boleh 4-8,
 membuat PIN terasa "mengetik sendiri". Owner memutuskan menyamai standar PIN bank.
@@ -347,3 +347,22 @@ LockScreen auto-submit hanya saat `_pin.length == 6`; indikator titik tetap 6.
 
 **Consequences:** Test repository/controller/widget diperbarui; pesan validasi:
 "PIN harus tepat 6 digit angka".
+
+## D-024 â€” Audit recovery gate sebelum Phase 2
+
+**Context:** Audit repository pada 2026-08-28 menemukan perbedaan antara status
+MVP di Git dan dokumentasi, serta risiko correctness pada restore, void, dan
+credit sale.
+
+**Decision:** Repository tidak boleh masuk Phase 2 sebelum temuan P0 pada
+`docs/AI_AUDIT.md` diperbaiki dengan regression test dan diverifikasi ulang.
+Status milestone dipisahkan menjadi "pernah pass" (execution history) dan
+"diverifikasi ulang" (audit session).
+
+**Reason:** Correctness data dan recoverability lebih penting daripada
+menambah fitur baru; commit atau test yang ada tidak membuktikan seluruh
+behavior aktual.
+
+**Consequences:** P0 recovery fixes dikerjakan berurutan dengan checkpoint Git
+lokal. Setiap fix wajib memiliki test dan verification yang relevan. Temuan P1
+tetap menjadi backlog, sedangkan fitur Phase 2/3 tetap deferred.

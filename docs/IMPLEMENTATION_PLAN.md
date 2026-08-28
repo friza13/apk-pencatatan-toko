@@ -32,19 +32,19 @@
 
 | Fase | Isi | Status |
 |---|---|---|
-| P0 | Foundation: git, flutter create, lint, theme NK, router, Result/Error | ▶ aktif |
-| SPIKE | SQLCipher+Drift POC 8 area (GATE sebelum schema produksi) | ▶ berikutnya |
-| P1 | Database schema v1 penuh (ERD + amendments) + migration harness + DAO tests | ⏳ |
-| P2 | Core domain: MoneyPolicy, Quantity, pricing engine, discount engine, datetime util (pure Dart, full test) | ⏳ |
-| P3 | Auth & store: onboarding owner, business profile, PIN+biometric, secure storage, settings | ⏳ |
-| P4 | Master data: category/unit/product(variant/unit konversi)/customer(type)/supplier/salesman + CRUD UI | ⏳ |
-| P5 | Inventory: movement service, opening balance, adjustment/opname, kartu stok, low-stock | ⏳ |
-| P6 | Sales: cart → checkout atomic, daftar nota, detail, void/return, refund doc | ⏳ |
-| P7 | Receivable & cash: payment allocation, piutang UI, kas/bank/expense/transfer, arus kas | ⏳ |
-| P8 | Reports: dashboard KPI, penjualan, laba (COGS snapshot), nilai stok, CSV export | ⏳ |
-| P9 | Printing/PDF: receipt renderer 58/80/A4, share, printer profile (+transport adapter) | ⏳ |
-| P10 | Backup: `.nkb` container, validate/preview/temp-db/atomic-swap restore, audit | ⏳ |
-| P11 | Hardening MVP: integration/recovery tests, demo data, perf pass → **MVP DONE** | ⏳ |
+| P0 | Foundation: git, flutter create, lint, theme NK, router, Result/Error | ✅ selesai |
+| SPIKE | SQLCipher+Drift POC 8 area (GATE sebelum schema produksi) | ✅ lulus |
+| P1 | Database schema v1 penuh (ERD + amendments) + migration harness + DAO tests | ✅ selesai; migration lanjutan P1 |
+| P2 | Core domain: MoneyPolicy, Quantity, pricing engine, discount engine, datetime util (pure Dart, full test) | ✅ selesai |
+| P3 | Auth & store: onboarding owner, business profile, PIN+biometric, secure storage, settings | ✅ selesai; settings lanjutan P1 |
+| P4 | Master data: category/unit/product(variant/unit konversi)/customer(type)/supplier/salesman + CRUD UI | ✅ selesai |
+| P5 | Inventory: movement service, opening balance, adjustment/opname, kartu stok, low-stock | ✅ selesai |
+| P6 | Sales: cart → checkout atomic, daftar nota, detail, void/return, refund doc | ⚠ selesai sebagian; P0 void/credit audit |
+| P7 | Receivable & cash: payment allocation, piutang UI, kas/bank/expense/transfer, arus kas | ✅ selesai; P0 consistency follow-up |
+| P8 | Reports: dashboard KPI, penjualan, laba (COGS snapshot), nilai stok, CSV export | ✅ selesai; precision follow-up |
+| P9 | Printing/PDF: receipt renderer 58/80/A4, share, printer profile (+transport adapter) | ✅ renderer/PDF/share; transport deferred |
+| P10 | Backup: `.nkb` container, validate/preview/temp-db/atomic-swap restore, audit | ⚠ selesai sebagian; P0 restore audit |
+| P11 | Hardening MVP: integration/recovery tests, demo data, perf pass → **MVP DONE** | ✅ milestone tercapai; belum release-stable sebelum P0 |
 | P12–P13 | Phase 2/3 (restaurant/minimarket/purchase lanjutan/marketplace adapter) | deferred |
 
 Setiap fase P1+ akan dipecah menjadi detailed task plan (gaya bite-sized/TDD) yang ditulis **just-in-time** sebelum eksekusi fase tersebut ke `docs/superpowers/plans/YYYY-MM-DD-<fase>.md`. Di bawah ini detail penuh untuk P0 + SPIKE.
@@ -384,4 +384,13 @@ Setiap checkpoint: `flutter analyze` ✓, `flutter test` ✓, `flutter build apk
 | 2026-08-26 | P4 Master data - **PASS** | Repo produk agregat+referensi+parties (9 tests) | UI list/search/filter/form/detail/arsip | Pelanggan/Supplier/Salesman/Referensi | Menu Lainnya nyata | 102 tests, apk ✓ | 1a28a40,ce7c67d |
 | 2026-08-26 | P5 Inventory - **PASS** | InventoryService atomik (opening/adjustment/opname + guard STOCK_INSUFFICIENT) | UI Stok + Kartu Stok via menu Lainnya | 110 tests, apk ✓, install emulator | 2c010c |
 
-**Status berikutnya: CHECKPOINT P5 lapor ke owner -> P6 Sales/Nota.**
+**Status aktual setelah audit 2026-08-28:** milestone P11 tercapai di Git,
+tetapi repository berada pada **MVP recovery gate**. Temuan P0 di
+`docs/AI_AUDIT.md` wajib diselesaikan dan diverifikasi sebelum Phase 2.
+
+### Audit execution log
+
+| Tanggal | Milestone | Hasil |
+|---|---|---|
+| 2026-08-28 | Repository audit/read-only | Temuan P0/P1/P2; belum ada perubahan source |
+| 2026-08-28 | Local checkpoint | `af4411a` sebelum recovery work |
