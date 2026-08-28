@@ -11,7 +11,8 @@ String formatMinor(int amount, {int scale = 0}) {
     final factor = _pow10(scale);
     final whole = magnitude ~/ factor;
     final fraction = magnitude % factor;
-    result = '${_group(whole)},'
+    result =
+        '${_group(whole)},'
         '${fraction.toString().padLeft(scale, '0')}';
   } else {
     result = _group(magnitude);

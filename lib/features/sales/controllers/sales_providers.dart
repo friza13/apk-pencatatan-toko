@@ -177,10 +177,7 @@ class CartController extends Notifier<CartState> {
     state = CartState(
       lines: [
         for (final l in state.lines)
-          if (l.cartKey == key)
-            l.copyWith(qtyMicro: newQtyMicro)
-          else
-            l,
+          if (l.cartKey == key) l.copyWith(qtyMicro: newQtyMicro) else l,
       ],
     );
   }

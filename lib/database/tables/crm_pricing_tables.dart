@@ -13,12 +13,10 @@ class CustomerTypes extends Table with IdColumn, AuditColumns {
   TextColumn get name => text()();
 
   /// `percent` or `fixed` (minor units value).
-  TextColumn get defaultDiscountType => text()
-      .nullable()
-      .customConstraint(
-        'CHECK (default_discount_type IS NULL OR '
-        "default_discount_type IN ('percent','fixed'))",
-      )();
+  TextColumn get defaultDiscountType => text().nullable().customConstraint(
+    'CHECK (default_discount_type IS NULL OR '
+    "default_discount_type IN ('percent','fixed'))",
+  )();
 
   IntColumn get defaultDiscountValue => integer().nullable()();
 
@@ -33,18 +31,25 @@ class CustomerTypes extends Table with IdColumn, AuditColumns {
 
 /// Customers (FR section E).
 @TableIndex(name: 'idx_customers_business_name', columns: {#businessId, #name})
-@TableIndex(name: 'idx_customers_business_phone', columns: {#businessId, #phone})
+@TableIndex(
+  name: 'idx_customers_business_phone',
+  columns: {#businessId, #phone},
+)
 class Customers extends Table with IdColumn, AuditColumns {
   IntColumn get businessId =>
       integer().references(Businesses, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get customerTypeId => integer()
-      .nullable()
-      .references(CustomerTypes, #id, onDelete: KeyAction.setNull)();
+  IntColumn get customerTypeId => integer().nullable().references(
+    CustomerTypes,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
-  IntColumn get salesmanId => integer()
-      .nullable()
-      .references(Salesmen, #id, onDelete: KeyAction.setNull)();
+  IntColumn get salesmanId => integer().nullable().references(
+    Salesmen,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   TextColumn get name => text()();
 
@@ -83,8 +88,8 @@ class Salesmen extends Table with IdColumn {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {businessId, code},
-      ];
+    {businessId, code},
+  ];
 }
 
 /// Named price tiers (retail/grosir/...) with explicit priority.
@@ -103,30 +108,40 @@ class PriceTiers extends Table with IdColumn {
 /// Product price rules per tier / customer type / unit / variant / quantity
 /// break. All nullable dimensions fall back to product base pricing.
 class ProductPrices extends Table with IdColumn, AuditColumns {
-  IntColumn get productId => integer()
-      .references(Products, #id, onDelete: KeyAction.cascade)();
+  IntColumn get productId =>
+      integer().references(Products, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get priceTierId => integer()
-      .nullable()
-      .references(PriceTiers, #id, onDelete: KeyAction.cascade)();
+  IntColumn get priceTierId => integer().nullable().references(
+    PriceTiers,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
-  IntColumn get customerTypeId => integer()
-      .nullable()
-      .references(CustomerTypes, #id, onDelete: KeyAction.cascade)();
+  IntColumn get customerTypeId => integer().nullable().references(
+    CustomerTypes,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
-  IntColumn get unitId =>
-      integer().nullable().references(Units, #id, onDelete: KeyAction.setNull)();
+  IntColumn get unitId => integer().nullable().references(
+    Units,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
-  IntColumn get variantId => integer()
-      .nullable()
-      .references(ProductVariants, #id, onDelete: KeyAction.cascade)();
+  IntColumn get variantId => integer().nullable().references(
+    ProductVariants,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   IntColumn get minQtyMicro => integer().nullable()();
 
   IntColumn get priceMinor => integer()();
 
-  IntColumn get validFrom =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get validFrom => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 
   IntColumn get validTo =>
       integer().map(const EpochMillisUtcConverter()).nullable()();
@@ -134,25 +149,31 @@ class ProductPrices extends Table with IdColumn, AuditColumns {
 
 /// Per-customer price overrides (highest pricing priority).
 class CustomerPrices extends Table with IdColumn, AuditColumns {
-  IntColumn get customerId => integer()
-      .references(Customers, #id, onDelete: KeyAction.cascade)();
+  IntColumn get customerId =>
+      integer().references(Customers, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get productId => integer()
-      .references(Products, #id, onDelete: KeyAction.cascade)();
+  IntColumn get productId =>
+      integer().references(Products, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get variantId => integer()
-      .nullable()
-      .references(ProductVariants, #id, onDelete: KeyAction.cascade)();
+  IntColumn get variantId => integer().nullable().references(
+    ProductVariants,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
-  IntColumn get unitId =>
-      integer().nullable().references(Units, #id, onDelete: KeyAction.setNull)();
+  IntColumn get unitId => integer().nullable().references(
+    Units,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   IntColumn get minQtyMicro => integer().nullable()();
 
   IntColumn get priceMinor => integer()();
 
-  IntColumn get validFrom =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get validFrom => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 
   IntColumn get validTo =>
       integer().map(const EpochMillisUtcConverter()).nullable()();

@@ -14,11 +14,8 @@ class PinHasher {
 
   final int iterations;
 
-  Pbkdf2 get _pbkdf2 => Pbkdf2(
-        macAlgorithm: Hmac.sha256(),
-        iterations: iterations,
-        bits: 256,
-      );
+  Pbkdf2 get _pbkdf2 =>
+      Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: iterations, bits: 256);
 
   /// Generates a fresh random salt, hex-encoded (16 bytes), using the
   /// platform CSPRNG.

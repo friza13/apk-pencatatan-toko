@@ -40,10 +40,12 @@ class ReceiptTextRenderer {
     for (final l in lines) {
       b
         ..writeln(_truncate(l.name))
-        ..writeln(_leftRight(
-          '  ${l.qty} x ${money(l.priceMinor)}',
-          money(l.totalMinor),
-        ));
+        ..writeln(
+          _leftRight(
+            '  ${l.qty} x ${money(l.priceMinor)}',
+            money(l.totalMinor),
+          ),
+        );
       if (l.discountMinor > 0) {
         b.writeln(_leftRight('  Diskon', '-${money(l.discountMinor)}'));
       }
@@ -91,7 +93,8 @@ class ReceiptTextRenderer {
     return '${' ' * left}$t';
   }
 
-  String _truncate(String s) => s.length <= widthChars ? s : s.substring(0, widthChars);
+  String _truncate(String s) =>
+      s.length <= widthChars ? s : s.substring(0, widthChars);
 
   String _leftRight(String left, String right) {
     var l = left;

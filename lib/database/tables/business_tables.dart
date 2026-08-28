@@ -64,13 +64,14 @@ class AppSettings extends Table {
 
   TextColumn get valueJson => text()();
 
-  IntColumn get updatedAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get updatedAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {businessId, settingKey},
-      ];
+    {businessId, settingKey},
+  ];
 }
 
 /// Audit trail (FR-AUDIT-001). Append-only; no updates/deletes from domain.
@@ -93,8 +94,9 @@ class ActivityLogs extends Table with IdColumn {
 
   TextColumn get deviceId => text().nullable()();
 
-  IntColumn get createdAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get createdAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 }
 
 /// Local notification outbox/history (FR-NOTIF-001).
@@ -113,8 +115,9 @@ class AppNotifications extends Table with IdColumn {
 
   BoolColumn get isRead => boolean().withDefault(const Constant(false))();
 
-  IntColumn get createdAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get createdAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 }
 
 /// Metadata about produced backup files (the `.nkb` files themselves live on
@@ -141,8 +144,9 @@ class BackupRecords extends Table with IdColumn {
 
   TextColumn get sourceDeviceId => text().nullable()();
 
-  IntColumn get createdAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get createdAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 }
 
 /// Saved printer configurations (FR-PRINT-001).

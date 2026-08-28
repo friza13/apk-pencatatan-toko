@@ -48,12 +48,14 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
     setState(() => _saving = true);
     try {
       final db = await ref.read(appDatabaseProvider.future);
-      await (db.update(db.businesses)
-            ..where((t) => t.id.equals(business.id)))
-          .write(
+      await (db.update(
+        db.businesses,
+      )..where((t) => t.id.equals(business.id))).write(
         BusinessesCompanion(
           name: Value(_nameC.text.trim()),
-          phone: Value(_phoneC.text.trim().isEmpty ? null : _phoneC.text.trim()),
+          phone: Value(
+            _phoneC.text.trim().isEmpty ? null : _phoneC.text.trim(),
+          ),
           address: Value(
             _addressC.text.trim().isEmpty ? null : _addressC.text.trim(),
           ),
@@ -72,9 +74,9 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -108,8 +110,9 @@ class _StoreProfileScreenState extends ConsumerState<StoreProfileScreen> {
                     labelText: 'Nama Toko *',
                     hintText: 'Contoh: Toko Berkah',
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Nama toko wajib diisi' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Nama toko wajib diisi'
+                      : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

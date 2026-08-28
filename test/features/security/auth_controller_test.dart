@@ -51,12 +51,16 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     secure = InMemorySecureStore();
     biometric = FakeBiometric();
-    container = ProviderContainer(overrides: [
-      appDatabaseProvider.overrideWith((ref) async => db),
-      secureStoreProvider.overrideWithValue(secure),
-      biometricAuthProvider.overrideWithValue(biometric),
-      pinHasherProvider.overrideWith((ref) => const PinHasher(iterations: 1000)),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWith((ref) async => db),
+        secureStoreProvider.overrideWithValue(secure),
+        biometricAuthProvider.overrideWithValue(biometric),
+        pinHasherProvider.overrideWith(
+          (ref) => const PinHasher(iterations: 1000),
+        ),
+      ],
+    );
     addTearDown(container.dispose);
     addTearDown(db.close);
   });
@@ -97,10 +101,7 @@ void main() {
     notifier.lock();
 
     // Not enabled yet.
-    expect(
-      await notifier.unlockWithBiometric(),
-      UnlockResult.notAvailable,
-    );
+    expect(await notifier.unlockWithBiometric(), UnlockResult.notAvailable);
     expect(biometric.promptCount, 0);
 
     await AuthRepository(db: db, secureStore: secure).setBiometricEnabled(true);
@@ -112,10 +113,7 @@ void main() {
     expect(s.canUseBiometric, isTrue);
 
     biometric.result = false;
-    expect(
-      await notifier.unlockWithBiometric(),
-      UnlockResult.wrongPin,
-    );
+    expect(await notifier.unlockWithBiometric(), UnlockResult.wrongPin);
 
     biometric.result = true;
     expect(await notifier.unlockWithBiometric(), UnlockResult.success);

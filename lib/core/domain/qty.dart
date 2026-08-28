@@ -31,9 +31,8 @@ class Qty implements Comparable<Qty> {
 
   /// Converts a quantity in some unit to base units using the given
   /// conversion factor (micro-scaled), half-up rounding.
-  Qty toBaseUnits(int conversionFactorMicro) => Qty(
-        divideRoundHalfUp(micro * conversionFactorMicro, quantityScale),
-      );
+  Qty toBaseUnits(int conversionFactorMicro) =>
+      Qty(divideRoundHalfUp(micro * conversionFactorMicro, quantityScale));
 
   @override
   int compareTo(Qty other) => micro.compareTo(other.micro);

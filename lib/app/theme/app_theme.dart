@@ -58,8 +58,9 @@ abstract final class AppTheme {
       fontFamily: AppTypography.fontFamily,
       appBarTheme: AppBarTheme(
         backgroundColor: scaffoldBackground,
-        foregroundColor:
-            isDark ? AppColors.darkTextPrimary : AppColors.neutral900,
+        foregroundColor: isDark
+            ? AppColors.darkTextPrimary
+            : AppColors.neutral900,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -98,9 +99,13 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: isDark ? AppColors.darkSurfaceElevated : AppColors.neutral100,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        fillColor: isDark
+            ? AppColors.darkSurfaceElevated
+            : AppColors.neutral100,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppRadius.medium,
           borderSide: BorderSide.none,

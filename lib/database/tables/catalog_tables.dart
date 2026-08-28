@@ -37,8 +37,8 @@ class Units extends Table with IdColumn {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {businessId, code},
-      ];
+    {businessId, code},
+  ];
 }
 
 /// Products: goods / service / non-stock (FR-PROD-001).
@@ -59,9 +59,11 @@ class Products extends Table with IdColumn, AuditColumns {
   IntColumn get businessId =>
       integer().references(Businesses, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get categoryId => integer()
-      .nullable()
-      .references(Categories, #id, onDelete: KeyAction.setNull)();
+  IntColumn get categoryId => integer().nullable().references(
+    Categories,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   TextColumn get name => text()();
 
@@ -73,11 +75,10 @@ class Products extends Table with IdColumn, AuditColumns {
   TextColumn get barcode => text().nullable()();
 
   /// `goods`, `service`, `non_stock`.
-  TextColumn get type => text()
-      .customConstraint(
-        "NOT NULL DEFAULT 'goods' "
-        "CHECK (type IN ('goods','service','non_stock'))",
-      )();
+  TextColumn get type => text().customConstraint(
+    "NOT NULL DEFAULT 'goods' "
+    "CHECK (type IN ('goods','service','non_stock'))",
+  )();
 
   TextColumn get photoPath => text().nullable()();
 
@@ -152,8 +153,8 @@ class ProductVariants extends Table with IdColumn, AuditColumns {
 /// (FR-PROD-003). Conversion uses micro-scaled integers (D-008): a factor of
 /// 24 is stored as 24 × quantityScale.
 class ProductUnits extends Table with IdColumn {
-  IntColumn get productId => integer()
-      .references(Products, #id, onDelete: KeyAction.cascade)();
+  IntColumn get productId =>
+      integer().references(Products, #id, onDelete: KeyAction.cascade)();
 
   IntColumn get unitId => integer().references(Units, #id)();
 
@@ -167,11 +168,11 @@ class ProductUnits extends Table with IdColumn {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {productId, unitId},
-      ];
+    {productId, unitId},
+  ];
 
   @override
   List<String> get customConstraints => const [
-        'CHECK (conversion_to_base_micro > 0)',
-      ];
+    'CHECK (conversion_to_base_micro > 0)',
+  ];
 }

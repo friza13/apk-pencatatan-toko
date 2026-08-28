@@ -17,32 +17,33 @@ void main() {
     db = AppDatabase(NativeDatabase.memory());
     service = InventoryService(db);
 
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'O'),
-        );
-    businessId = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'O'));
+    businessId = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko'));
 
     final refs = ReferenceRepository(db);
     await refs.ensureDefaults(businessId);
     pcsUnitId = (await refs.unitByCode(businessId, 'pcs'))!.id;
 
     final products = ProductRepository(db);
-    productId = await products.createProduct(ProductDraft(
-      businessId: businessId,
-      name: 'Kopi',
-      baseUnitId: pcsUnitId,
-      salePriceMinor: 10000,
-    ));
+    productId = await products.createProduct(
+      ProductDraft(
+        businessId: businessId,
+        name: 'Kopi',
+        baseUnitId: pcsUnitId,
+        salePriceMinor: 10000,
+      ),
+    );
   });
 
   tearDown(() async => db.close());
 
-  Future<int> cachedStock() async =>
-      (await (db.select(db.products)..where((t) => t.id.equals(productId)))
-            .getSingle())
-          .stockQuantityMicro;
+  Future<int> cachedStock() async => (await (db.select(
+    db.products,
+  )..where((t) => t.id.equals(productId))).getSingle()).stockQuantityMicro;
 
   test('opening balance writes movement and sets cache', () async {
     final r = await service.setOpeningBalance(productId, 10000000); // 10
@@ -114,20 +115,19 @@ void main() {
 
   test('negative inputs rejected', () async {
     expect(
-        (await service.setOpeningBalance(productId, -1))
-            .failure
-            ?.code,
-        ErrorCodes.invalidQuantity);
+      (await service.setOpeningBalance(productId, -1)).failure?.code,
+      ErrorCodes.invalidQuantity,
+    );
     expect(
-        (await service.stockOpname(productId, -5, ''))
-            .failure
-            ?.code,
-        ErrorCodes.invalidQuantity);
+      (await service.stockOpname(productId, -5, '')).failure?.code,
+      ErrorCodes.invalidQuantity,
+    );
   });
 
   test('zero adjustment rejected', () async {
     expect(
-        (await service.adjustStock(productId, 0, 'x')).failure?.code,
-        ErrorCodes.invalidQuantity);
+      (await service.adjustStock(productId, 0, 'x')).failure?.code,
+      ErrorCodes.invalidQuantity,
+    );
   });
 }

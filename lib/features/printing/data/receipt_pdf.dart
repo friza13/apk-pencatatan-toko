@@ -17,13 +17,11 @@ class ReceiptPdf {
 
     doc.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(widthMm, 297, marginAll: 5 * 72 / 25.4),        build: (context) => pw.Text(
-          text,
-          style: pw.TextStyle(font: font, fontSize: 8),
-        ),
+        pageFormat: PdfPageFormat(widthMm, 297, marginAll: 5 * 72 / 25.4),
+        build: (context) =>
+            pw.Text(text, style: pw.TextStyle(font: font, fontSize: 8)),
       ),
     );
     return doc.save();
   }
 }
-

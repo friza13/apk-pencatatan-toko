@@ -13,8 +13,9 @@ void main() {
     });
 
     test('failure holds code and message', () {
-      const Result<int> r =
-          Result.failure(Failure(code: ErrorCodes.invalidPin, message: 'PIN salah'));
+      const Result<int> r = Result.failure(
+        Failure(code: ErrorCodes.invalidPin, message: 'PIN salah'),
+      );
       expect(r.isSuccess, isFalse);
       expect(r.isFailure, isTrue);
       expect(r.dataOrNull, isNull);
@@ -23,16 +24,12 @@ void main() {
     });
 
     test('when maps both branches', () {
-      String describe(Result<int> r) => r.when(
-            success: (v) => 'ok $v',
-            failure: (f) => 'err ${f.code}',
-          );
+      String describe(Result<int> r) =>
+          r.when(success: (v) => 'ok $v', failure: (f) => 'err ${f.code}');
 
       expect(describe(Result.success(1)), 'ok 1');
       expect(
-        describe(
-          const Result.failure(Failure(code: 'X', message: 'boom')),
-        ),
+        describe(const Result.failure(Failure(code: 'X', message: 'boom'))),
         'err X',
       );
     });

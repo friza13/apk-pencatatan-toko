@@ -17,18 +17,21 @@ class ProductDetailScreen extends ConsumerWidget {
     final repo = ref.watch(productRepositoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Produk'), actions: [
-        IconButton(
-          icon: const Icon(Icons.edit_outlined),
-          tooltip: 'Edit',
-          onPressed: () async {
-            await context.push('/products/$productId/edit');
-            // refresh after edit
-            // ignore: unawaited_futures
-            ref.invalidate(productsControllerProvider);
-          },
-        ),
-      ]),
+      appBar: AppBar(
+        title: const Text('Detail Produk'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit',
+            onPressed: () async {
+              await context.push('/products/$productId/edit');
+              // refresh after edit
+              // ignore: unawaited_futures
+              ref.invalidate(productsControllerProvider);
+            },
+          ),
+        ],
+      ),
       body: repo.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
@@ -51,8 +54,7 @@ class ProductDetailScreen extends ConsumerWidget {
                 Text(
                   [
                     if (p.sku != null && p.sku!.isNotEmpty) 'SKU ${p.sku}',
-                    if (p.barcode != null && p.barcode!.isNotEmpty)
-                      p.barcode!,
+                    if (p.barcode != null && p.barcode!.isNotEmpty) p.barcode!,
                     switch (p.type) {
                       'goods' => 'Barang',
                       'service' => 'Jasa',
@@ -65,8 +67,9 @@ class ProductDetailScreen extends ConsumerWidget {
                 if (!p.isActive)
                   Chip(
                     label: const Text('Nonaktif'),
-                    backgroundColor:
-                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                   ),
                 const SizedBox(height: 8),
                 _Accordion(
@@ -74,9 +77,12 @@ class ProductDetailScreen extends ConsumerWidget {
                   initiallyExpanded: true,
                   children: [
                     _kv('Harga jual', formatMinor(p.salePriceMinor)),
-                    _kv('Harga grosir', p.wholesalePriceMinor == null
-                        ? '-'
-                        : formatMinor(p.wholesalePriceMinor!)),
+                    _kv(
+                      'Harga grosir',
+                      p.wholesalePriceMinor == null
+                          ? '-'
+                          : formatMinor(p.wholesalePriceMinor!),
+                    ),
                     _kv('Harga beli/modal', formatMinor(p.costPriceMinor)),
                   ],
                 ),
@@ -90,8 +96,10 @@ class ProductDetailScreen extends ConsumerWidget {
                           : 'Tidak dilacak',
                     ),
                     if (p.trackStock)
-                      _kv('Batas minimum',
-                          microToDecimalString(p.minStockMicro)),
+                      _kv(
+                        'Batas minimum',
+                        microToDecimalString(p.minStockMicro),
+                      ),
                   ],
                 ),
                 if (detail.variants.isNotEmpty)
@@ -117,25 +125,36 @@ class ProductDetailScreen extends ConsumerWidget {
                           contentPadding: EdgeInsets.zero,
                           title: Text(u.unitName),
                           trailing: Text(
-                              '1 ${u.unitCode} = '
-                              '${microToDecimalString(u.entry.conversionToBaseMicro)}'),
+                            '1 ${u.unitCode} = '
+                            '${microToDecimalString(u.entry.conversionToBaseMicro)}',
+                          ),
                         ),
                     ],
                   ),
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
-                  icon: Icon(p.isActive ? Icons.archive_outlined : Icons.unarchive_outlined),
-                  label: Text(p.isActive ? 'Arsipkan produk' : 'Aktifkan kembali'),
+                  icon: Icon(
+                    p.isActive
+                        ? Icons.archive_outlined
+                        : Icons.unarchive_outlined,
+                  ),
+                  label: Text(
+                    p.isActive ? 'Arsipkan produk' : 'Aktifkan kembali',
+                  ),
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
                     final navigator = Navigator.of(context);
-                    final notifier =
-                        ref.read(productsControllerProvider.notifier);
+                    final notifier = ref.read(
+                      productsControllerProvider.notifier,
+                    );
                     await notifier.toggleActive(p);
                     ref.invalidate(productsControllerProvider);
                     navigator.pop();
-                    messenger.showSnackBar(const SnackBar(
-                        content: Text('Status produk diperbarui.')));
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Status produk diperbarui.'),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -147,15 +166,15 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   Widget _kv(String k, String v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(k),
-            Text(v, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(k),
+        Text(v, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
 }
 
 class _Accordion extends StatelessWidget {
@@ -176,8 +195,10 @@ class _Accordion extends StatelessWidget {
       child: ExpansionTile(
         initiallyExpanded: initiallyExpanded,
         tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-        childrenPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        childrenPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
         shape: const Border(),
         title: Text(title, style: Theme.of(context).textTheme.titleMedium),
         children: children,

@@ -28,20 +28,23 @@ void main() {
     finance = FinanceService(db);
     receivables = ReceivableService(db);
 
-    final ownerId =
-        await db.into(db.owners).insert(OwnersCompanion.insert(name: 'O'));
-    businessId = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'O'));
+    businessId = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko'));
 
     final refs = ReferenceRepository(db);
     await refs.ensureDefaults(businessId);
     final pcs = (await refs.unitByCode(businessId, 'pcs'))!.id;
 
-    kasId = await db.into(db.accounts).insert(
-          AccountsCompanion.insert(businessId: businessId, name: 'Kas'),
-        );
-    bankId = await db.into(db.accounts).insert(
+    kasId = await db
+        .into(db.accounts)
+        .insert(AccountsCompanion.insert(businessId: businessId, name: 'Kas'));
+    bankId = await db
+        .into(db.accounts)
+        .insert(
           AccountsCompanion.insert(
             businessId: businessId,
             name: 'Bank',
@@ -50,17 +53,21 @@ void main() {
         );
 
     final custRepo = CustomerRepository(db);
-    customerId =
-        await custRepo.create(businessId: businessId, name: 'Ibu Sari');
-
-    jasaId = await ProductRepository(db).createProduct(ProductDraft(
+    customerId = await custRepo.create(
       businessId: businessId,
-      name: 'Jasa Kirim',
-      type: 'service',
-      trackStock: false,
-      baseUnitId: pcs,
-      salePriceMinor: 5000,
-    ));
+      name: 'Ibu Sari',
+    );
+
+    jasaId = await ProductRepository(db).createProduct(
+      ProductDraft(
+        businessId: businessId,
+        name: 'Jasa Kirim',
+        type: 'service',
+        trackStock: false,
+        baseUnitId: pcs,
+        salePriceMinor: 5000,
+      ),
+    );
   });
 
   tearDown(() async => db.close());
@@ -69,32 +76,36 @@ void main() {
   /// receivable id.
   Future<int> makeReceivable(int grandMinor) async {
     final qtyUnits = grandMinor ~/ 5000;
-    await sales.checkout(CheckoutInput(
-      lines: [
-        SaleLineInput(
-          productId: jasaId,
-          qtyMicro: qtyUnits * 1000000,
-          unitPriceMinor: 5000,
-        ),
-      ],
-      accountId: kasId,
-      customerId: customerId,
-    ));
+    await sales.checkout(
+      CheckoutInput(
+        lines: [
+          SaleLineInput(
+            productId: jasaId,
+            qtyMicro: qtyUnits * 1000000,
+            unitPriceMinor: 5000,
+          ),
+        ],
+        accountId: kasId,
+        customerId: customerId,
+      ),
+    );
     final r = await (db.select(db.receivables)).getSingle();
     return r.id;
   }
 
-  Future<int> balanceOf(int accountId) async =>
-      (await (db.select(db.accounts)..where((t) => t.id.equals(accountId)))
-            .getSingle())
-          .currentBalanceMinor;
+  Future<int> balanceOf(int accountId) async => (await (db.select(
+    db.accounts,
+  )..where((t) => t.id.equals(accountId))).getSingle()).currentBalanceMinor;
 
   group('ReceivableService', () {
     test('partial payment -> partial; full second payment closes', () async {
       final rid = await makeReceivable(20000);
 
       final first = await receivables.recordPayment(
-          receivableId: rid, accountId: kasId, amountMinor: 15000);
+        receivableId: rid,
+        accountId: kasId,
+        amountMinor: 15000,
+      );
       expect(first.isSuccess, isTrue);
 
       var row = (await db.select(db.receivables).get()).single;
@@ -103,7 +114,10 @@ void main() {
       expect(row.closedAt, isNull);
 
       final second = await receivables.recordPayment(
-          receivableId: rid, accountId: kasId, amountMinor: 5000);
+        receivableId: rid,
+        accountId: kasId,
+        amountMinor: 5000,
+      );
       expect(second.isSuccess, isTrue);
 
       row = (await db.select(db.receivables).get()).single;
@@ -117,50 +131,61 @@ void main() {
 
       expect(
         (await receivables.recordPayment(
-                receivableId: rid, accountId: kasId, amountMinor: 25000))
-            .failure
-            ?.code,
+          receivableId: rid,
+          accountId: kasId,
+          amountMinor: 25000,
+        )).failure?.code,
         ErrorCodes.invalidPayment,
       );
       expect(
         (await receivables.recordPayment(
-                receivableId: rid, accountId: kasId, amountMinor: 0))
-            .failure
-            ?.code,
+          receivableId: rid,
+          accountId: kasId,
+          amountMinor: 0,
+        )).failure?.code,
         ErrorCodes.invalidPayment,
       );
 
       await receivables.recordPayment(
-          receivableId: rid, accountId: kasId, amountMinor: 20000);
+        receivableId: rid,
+        accountId: kasId,
+        amountMinor: 20000,
+      );
       expect(
         (await receivables.recordPayment(
-                receivableId: rid, accountId: kasId, amountMinor: 1000))
-            .failure
-            ?.code,
+          receivableId: rid,
+          accountId: kasId,
+          amountMinor: 1000,
+        )).failure?.code,
         ErrorCodes.invalidPayment,
       );
     });
 
-    test('payment writes ledger debit + kas balance + junction + audit',
-        () async {
-      final rid = await makeReceivable(20000);
-      final before = await balanceOf(kasId);
+    test(
+      'payment writes ledger debit + kas balance + junction + audit',
+      () async {
+        final rid = await makeReceivable(20000);
+        final before = await balanceOf(kasId);
 
-      await receivables.recordPayment(
-          receivableId: rid, accountId: kasId, amountMinor: 8000);
-      expect(await balanceOf(kasId), before + 8000);
+        await receivables.recordPayment(
+          receivableId: rid,
+          accountId: kasId,
+          amountMinor: 8000,
+        );
+        expect(await balanceOf(kasId), before + 8000);
 
-      final junction = await db.select(db.receivablePayments).get();
-      expect(junction.single.amountAppliedMinor, 8000);
+        final junction = await db.select(db.receivablePayments).get();
+        expect(junction.single.amountAppliedMinor, 8000);
 
-      final ledger = await db.select(db.ledgerEntries).get();
-      expect(ledger.last.entryType, 'debit');
+        final ledger = await db.select(db.ledgerEntries).get();
+        expect(ledger.last.entryType, 'debit');
 
-      final logs = await (db.select(db.activityLogs)
-            ..where((t) => t.action.equals('receivable.paid')))
-          .get();
-      expect(logs, hasLength(1));
-    });
+        final logs = await (db.select(
+          db.activityLogs,
+        )..where((t) => t.action.equals('receivable.paid'))).get();
+        expect(logs, hasLength(1));
+      },
+    );
 
     test('list joins customer name', () async {
       await makeReceivable(12000);
@@ -219,17 +244,19 @@ void main() {
       expect(pair.map((e) => e.entryType), containsAll(['debit', 'credit']));
 
       final paymentsRows = await db.select(db.payments).get();
-      final transferRow =
-          paymentsRows.lastWhere((p) => p.purpose == 'transfer');
+      final transferRow = paymentsRows.lastWhere(
+        (p) => p.purpose == 'transfer',
+      );
       expect(transferRow.counterAccountId, bankId);
     });
 
     test('same-account transfer rejected', () async {
       expect(
         (await finance.transfer(
-                fromAccountId: kasId, toAccountId: kasId, amountMinor: 1000))
-            .failure
-            ?.code,
+          fromAccountId: kasId,
+          toAccountId: kasId,
+          amountMinor: 1000,
+        )).failure?.code,
         ErrorCodes.invalidPayment,
       );
     });

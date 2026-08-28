@@ -6,6 +6,19 @@
 
 ---
 
+## D-028 — Pengaturan profil toko & Pemilihan Varian / Satuan di POS Cart
+
+**Context:** Profil toko belum memiliki UI dan routing dari menu Pengaturan; POS Cart sebelumnya hanya menambahkan produk dasar tanpa picker varian/satuan konversi.
+
+**Decision:** 
+1. Menambahkan `StoreProfileScreen` yang terhubung ke database `businesses` untuk mengubah nama toko, nomor telepon, alamat, dan catatan kaki struk (`footerNote`), serta mendaftarkan route `/more/settings`.
+2. Menambahkan dukungan varian dan satuan konversi ke `CartLine` dan `CartController` (dengan `cartKey` unik dan getter `displayName`), serta modal bottom sheet di `NewSaleScreen` untuk memilih varian atau satuan alternatif sebelum masuk ke keranjang.
+3. Memperbaiki formatting quantity pada struk cetak (`microToDecimalString`) dan parsing desimal pada retur (`toMicro`).
+
+**Reason:** Memenuhi PRD §Q (Store Settings), SRS §FR-STORE-001, SRS §FR-PRINT-001, SRS §FR-PROD-002 / FR-PROD-003, dan memastikan user experience di POS lengkap dan akurat.
+
+**Trade-offs:** Penambahan query detail saat produk dipilih memiliki latency minimal, namun menyediakan opsi varian/satuan secara interaktif.
+
 ## D-025 — Checkout menggunakan pricing snapshot ter-resolve
 
 **Context:** Model pricing, variant, dan unit sudah ada, tetapi checkout masih

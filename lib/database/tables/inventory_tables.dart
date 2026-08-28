@@ -21,26 +21,31 @@ class StockMovements extends Table with IdColumn {
   IntColumn get productId =>
       integer().references(Products, #id, onDelete: KeyAction.restrict)();
 
-  IntColumn get variantId => integer()
-      .nullable()
-      .references(ProductVariants, #id, onDelete: KeyAction.restrict)();
+  IntColumn get variantId => integer().nullable().references(
+    ProductVariants,
+    #id,
+    onDelete: KeyAction.restrict,
+  )();
 
-  IntColumn get saleId => integer()
-      .nullable()
-      .references(Sales, #id, onDelete: KeyAction.setNull)();
+  IntColumn get saleId => integer().nullable().references(
+    Sales,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
-  IntColumn get purchaseId => integer()
-      .nullable()
-      .references(Purchases, #id, onDelete: KeyAction.setNull)();
+  IntColumn get purchaseId => integer().nullable().references(
+    Purchases,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   /// `purchase_in`, `sale_out`, `sales_return_in`, `purchase_return_out`,
   /// `adjustment_in`, `adjustment_out`, `stock_opname`, `opening_balance`.
-  TextColumn get movementType => text()
-      .customConstraint(
-        "NOT NULL CHECK (movement_type IN ('purchase_in','sale_out',"
-        "'sales_return_in','purchase_return_out','adjustment_in',"
-        "'adjustment_out','stock_opname','opening_balance'))",
-      )();
+  TextColumn get movementType => text().customConstraint(
+    "NOT NULL CHECK (movement_type IN ('purchase_in','sale_out',"
+    "'sales_return_in','purchase_return_out','adjustment_in',"
+    "'adjustment_out','stock_opname','opening_balance'))",
+  )();
 
   IntColumn get qtyBaseMicro => integer()();
 
@@ -51,8 +56,9 @@ class StockMovements extends Table with IdColumn {
 
   TextColumn get note => text().nullable()();
 
-  IntColumn get occurredAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get occurredAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 }
 
 /// Sales return document — references the original sale; the sale itself is
@@ -88,9 +94,11 @@ class SalesReturnLines extends Table with IdColumn {
   IntColumn get productId =>
       integer().references(Products, #id, onDelete: KeyAction.restrict)();
 
-  IntColumn get variantId => integer()
-      .nullable()
-      .references(ProductVariants, #id, onDelete: KeyAction.restrict)();
+  IntColumn get variantId => integer().nullable().references(
+    ProductVariants,
+    #id,
+    onDelete: KeyAction.restrict,
+  )();
 
   /// Returned base quantity in micro units.
   IntColumn get qtyBaseMicro => integer()();
@@ -103,9 +111,11 @@ class PurchaseReturns extends Table with IdColumn, AuditColumns {
   IntColumn get businessId =>
       integer().references(Businesses, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get purchaseId => integer()
-      .nullable()
-      .references(Purchases, #id, onDelete: KeyAction.setNull)();
+  IntColumn get purchaseId => integer().nullable().references(
+    Purchases,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   TextColumn get number => text()();
 
@@ -115,12 +125,14 @@ class PurchaseReturns extends Table with IdColumn, AuditColumns {
 }
 
 class PurchaseReturnLines extends Table with IdColumn {
-  IntColumn get purchaseReturnId => integer()
-      .references(PurchaseReturns, #id, onDelete: KeyAction.cascade)();
+  IntColumn get purchaseReturnId =>
+      integer().references(PurchaseReturns, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get purchaseLineId => integer()
-      .nullable()
-      .references(PurchaseLines, #id, onDelete: KeyAction.setNull)();
+  IntColumn get purchaseLineId => integer().nullable().references(
+    PurchaseLines,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   IntColumn get productId =>
       integer().references(Products, #id, onDelete: KeyAction.restrict)();

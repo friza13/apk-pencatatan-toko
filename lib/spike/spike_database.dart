@@ -28,8 +28,8 @@ class SpikeProducts extends Table {
 
   @override
   List<String> get customConstraints => const [
-        'FOREIGN KEY (category_id) REFERENCES spike_categories(id)',
-      ];
+    'FOREIGN KEY (category_id) REFERENCES spike_categories(id)',
+  ];
 }
 
 /// Current spike schema (v2).
@@ -42,12 +42,12 @@ class SpikeDatabase extends _$SpikeDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.addColumn(spikeProducts, spikeProducts.note);
-          }
-        },
-      );
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(spikeProducts, spikeProducts.note);
+      }
+    },
+  );
 }
 
 String _escapeSqlString(String value) => value.replaceAll("'", "''");

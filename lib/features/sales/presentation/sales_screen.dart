@@ -30,8 +30,11 @@ class SalesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long_outlined,
-                      size: 64, color: Theme.of(context).colorScheme.outline),
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   const SizedBox(height: 16),
                   const Text('Belum ada nota'),
                   const SizedBox(height: 8),
@@ -50,11 +53,12 @@ class SalesScreen extends ConsumerWidget {
                 leading: _statusChip(context, s.status),
                 title: Text(s.number ?? '(tanpa nomor)'),
                 subtitle: Text(_fmtDate(s.createdAt)),
-                trailing: Text(formatMinor(s.grandTotalMinor),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                trailing: Text(
+                  formatMinor(s.grandTotalMinor),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 onTap: () => context.push('/sales/${s.id}'),
               );
             },
@@ -70,10 +74,15 @@ class SalesScreen extends ConsumerWidget {
       'partially_paid': (const Color(0xFFFFFBEB), 'Sebagian'),
       'credit': (const Color(0xFFEFF6FF), 'Kredit'),
       'voided': (Theme.of(context).colorScheme.errorContainer, 'Void'),
-      'confirmed': (Theme.of(context).colorScheme.primaryContainer, 'Terkonfirmasi'),
+      'confirmed': (
+        Theme.of(context).colorScheme.primaryContainer,
+        'Terkonfirmasi',
+      ),
       'draft': (Theme.of(context).colorScheme.surfaceContainerHighest, 'Draft'),
     };
-    final entry = map[status] ?? (Theme.of(context).colorScheme.surfaceContainerHighest, status);
+    final entry =
+        map[status] ??
+        (Theme.of(context).colorScheme.surfaceContainerHighest, status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

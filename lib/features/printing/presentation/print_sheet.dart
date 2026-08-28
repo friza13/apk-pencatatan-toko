@@ -71,8 +71,7 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
   }
 
   Future<Uint8List> _buildPdfBytes() async {
-    final bytes =
-        await ReceiptPdf.build(text: _text, is80mm: _is80);
+    final bytes = await ReceiptPdf.build(text: _text, is80mm: _is80);
     return Uint8List.fromList(bytes);
   }
 
@@ -89,14 +88,15 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       // Membuka dialog cetak sistem (pilih printer terpasang).
-      await Printing.layoutPdf(
-        onLayout: (_) => _buildPdfBytes(),
-      );
+      await Printing.layoutPdf(onLayout: (_) => _buildPdfBytes());
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text(
-            'Tidak ada printer. Gunakan Bagikan PDF untuk membagikan nota.'),
-      ));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tidak ada printer. Gunakan Bagikan PDF untuk membagikan nota.',
+          ),
+        ),
+      );
     }
   }
 
@@ -106,53 +106,57 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text('Cetak Nota', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        SegmentedButton<bool>(
-          segments: const [
-            ButtonSegment(value: false, label: Text('58 mm')),
-            ButtonSegment(value: true, label: Text('80 mm')),
-          ],
-          selected: {_is80},
-          onSelectionChanged: (s) => setState(() => _is80 = s.first),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          constraints: const BoxConstraints(maxHeight: 260),
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Cetak Nota', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: false, label: Text('58 mm')),
+              ButtonSegment(value: true, label: Text('80 mm')),
+            ],
+            selected: {_is80},
+            onSelectionChanged: (s) => setState(() => _is80 = s.first),
           ),
-          child: SingleChildScrollView(
-            child: SelectableText(
-              text,
-              style:
-                  const TextStyle(fontFamily: 'monospace', fontSize: 11),
+          const SizedBox(height: 12),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 260),
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: SingleChildScrollView(
+              child: SelectableText(
+                text,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.share_outlined),
-              label: const Text('Bagikan PDF'),
-              onPressed: _sharePdf,
-            ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.share_outlined),
+                  label: const Text('Bagikan PDF'),
+                  onPressed: _sharePdf,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  icon: const Icon(Icons.print_outlined),
+                  label: const Text('Cetak'),
+                  onPressed: _print,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: FilledButton.icon(
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Cetak'),
-              onPressed: _print,
-            ),
-          ),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 }

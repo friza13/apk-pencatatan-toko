@@ -26,8 +26,8 @@ class AuthRepository {
     required AppDatabase db,
     required SecureStore secureStore,
     this.hasher = const PinHasher(),
-  })  : _db = db,
-        _secure = secureStore;
+  }) : _db = db,
+       _secure = secureStore;
 
   final AppDatabase _db;
   final SecureStore _secure;
@@ -63,10 +63,12 @@ class AuthRepository {
     }
     _validatePin(pin);
 
-    final ownerId = await _db.into(_db.owners).insert(
-          OwnersCompanion.insert(name: ownerName),
-        );
-    final businessId = await _db.into(_db.businesses).insert(
+    final ownerId = await _db
+        .into(_db.owners)
+        .insert(OwnersCompanion.insert(name: ownerName));
+    final businessId = await _db
+        .into(_db.businesses)
+        .insert(
           BusinessesCompanion.insert(
             ownerId: ownerId,
             name: businessName,
@@ -135,14 +137,17 @@ class AuthRepository {
     Value<String> footerNote = const Value.absent(),
     Value<String> invoicePrefix = const Value.absent(),
   }) async {
-    await (_db.update(_db.businesses)..where((t) => t.id.equals(businessId)))
-        .write(BusinessesCompanion(
-      name: name == null ? const Value.absent() : Value(name),
-      address: address,
-      phone: phone,
-      footerNote: footerNote,
-      invoicePrefix: invoicePrefix,
-    ));
+    await (_db.update(
+      _db.businesses,
+    )..where((t) => t.id.equals(businessId))).write(
+      BusinessesCompanion(
+        name: name == null ? const Value.absent() : Value(name),
+        address: address,
+        phone: phone,
+        footerNote: footerNote,
+        invoicePrefix: invoicePrefix,
+      ),
+    );
   }
 
   Future<void> _writePinVerifier(String pin) async {

@@ -10,36 +10,38 @@ import '../data/reference_repository.dart';
 /// Current signed-in business (single-owner app => at most one row).
 final FutureProvider<Business> currentBusinessProvider =
     FutureProvider<Business>((ref) async {
-  final db = await ref.watch(appDatabaseProvider.future);
-  final repo =
-      AuthRepository(db: db, secureStore: ref.read(secureStoreProvider));
-  final business = await repo.currentBusiness();
-  if (business == null) {
-    throw StateError('No business - onboarding incomplete');
-  }
-  return business;
-});
+      final db = await ref.watch(appDatabaseProvider.future);
+      final repo = AuthRepository(
+        db: db,
+        secureStore: ref.read(secureStoreProvider),
+      );
+      final business = await repo.currentBusiness();
+      if (business == null) {
+        throw StateError('No business - onboarding incomplete');
+      }
+      return business;
+    });
 
 final FutureProvider<ReferenceRepository> referenceRepositoryProvider =
     FutureProvider<ReferenceRepository>((ref) async {
-  final db = await ref.watch(appDatabaseProvider.future);
-  return ReferenceRepository(db);
-});
+      final db = await ref.watch(appDatabaseProvider.future);
+      return ReferenceRepository(db);
+    });
 
 final FutureProvider<ProductRepository> productRepositoryProvider =
     FutureProvider<ProductRepository>((ref) async {
-  final db = await ref.watch(appDatabaseProvider.future);
-  return ProductRepository(db);
-});
+      final db = await ref.watch(appDatabaseProvider.future);
+      return ProductRepository(db);
+    });
 
 /// Seeds starter units/tiers/types once per unlock.
-final FutureProvider<void> masterDataSeedProvider = FutureProvider<void>(
-  (ref) async {
-    final business = await ref.watch(currentBusinessProvider.future);
-    final refs = await ref.watch(referenceRepositoryProvider.future);
-    await refs.ensureDefaults(business.id);
-  },
-);
+final FutureProvider<void> masterDataSeedProvider = FutureProvider<void>((
+  ref,
+) async {
+  final business = await ref.watch(currentBusinessProvider.future);
+  final refs = await ref.watch(referenceRepositoryProvider.future);
+  await refs.ensureDefaults(business.id);
+});
 
 class ProductListState {
   const ProductListState({
@@ -106,36 +108,37 @@ class ProductsController extends AsyncNotifier<ProductListState> {
 
 final productsControllerProvider =
     AsyncNotifierProvider<ProductsController, ProductListState>(
-        ProductsController.new);
+      ProductsController.new,
+    );
 
 /// Watchable categories for dropdowns/forms.
 final StreamProvider<List<Category>> categoriesStreamProvider =
     StreamProvider<List<Category>>((ref) async* {
-  final business = await ref.watch(currentBusinessProvider.future);
-  final db = await ref.watch(appDatabaseProvider.future);
-  final query = db.select(db.categories)
-    ..where((t) => t.businessId.equals(business.id))
-    ..orderBy([(t) => OrderingTerm.asc(t.name)]);
-  yield* query.watch();
-});
+      final business = await ref.watch(currentBusinessProvider.future);
+      final db = await ref.watch(appDatabaseProvider.future);
+      final query = db.select(db.categories)
+        ..where((t) => t.businessId.equals(business.id))
+        ..orderBy([(t) => OrderingTerm.asc(t.name)]);
+      yield* query.watch();
+    });
 
 /// Watchable units for dropdowns/conversion editors.
 final StreamProvider<List<Unit>> unitsStreamProvider =
     StreamProvider<List<Unit>>((ref) async* {
-  final business = await ref.watch(currentBusinessProvider.future);
-  final db = await ref.watch(appDatabaseProvider.future);
-  final query = db.select(db.units)
-    ..where((t) => t.businessId.equals(business.id))
-    ..orderBy([(t) => OrderingTerm.asc(t.code)]);
-  yield* query.watch();
-});
+      final business = await ref.watch(currentBusinessProvider.future);
+      final db = await ref.watch(appDatabaseProvider.future);
+      final query = db.select(db.units)
+        ..where((t) => t.businessId.equals(business.id))
+        ..orderBy([(t) => OrderingTerm.asc(t.code)]);
+      yield* query.watch();
+    });
 
 /// Watchable price tiers for the pricing section.
 final StreamProvider<List<PriceTier>> tiersStreamProvider =
     StreamProvider<List<PriceTier>>((ref) async* {
-  final business = await ref.watch(currentBusinessProvider.future);
-  final db = await ref.watch(appDatabaseProvider.future);
-  yield* (db.select(db.priceTiers)
-        ..where((t) => t.businessId.equals(business.id)))
-      .watch();
-});
+      final business = await ref.watch(currentBusinessProvider.future);
+      final db = await ref.watch(appDatabaseProvider.future);
+      yield* (db.select(
+        db.priceTiers,
+      )..where((t) => t.businessId.equals(business.id))).watch();
+    });

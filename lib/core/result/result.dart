@@ -16,23 +16,22 @@ sealed class Result<T> {
   bool get isFailure => this is FailureResult<T>;
 
   T? get dataOrNull => switch (this) {
-        Success<T>(:final data) => data,
-        _ => null,
-      };
+    Success<T>(:final data) => data,
+    _ => null,
+  };
 
   Failure? get failureOrNull => switch (this) {
-        FailureResult<T>(:final failure) => failure,
-        _ => null,
-      };
+    FailureResult<T>(:final failure) => failure,
+    _ => null,
+  };
 
   R when<R>({
     required R Function(T data) success,
     required R Function(Failure failure) failure,
-  }) =>
-      switch (this) {
-        Success<T>(:final data) => success(data),
-        FailureResult<T>(failure: final err) => failure(err),
-      };
+  }) => switch (this) {
+    Success<T>(:final data) => success(data),
+    FailureResult<T>(failure: final err) => failure(err),
+  };
 }
 
 final class Success<T> extends Result<T> {

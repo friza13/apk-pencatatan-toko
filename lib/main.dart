@@ -8,7 +8,7 @@ import 'app/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('id_ID', null);
+  await initializeDateFormatting('id_ID');
   runApp(const ProviderScope(child: NotaKitApp()));
 }
 
@@ -24,9 +24,8 @@ class NotaKitApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.light,
       routerConfig: appRouter,
-      builder: (context, child) => AuthGate(
-        unlockedBuilder: (_) => child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) =>
+          AuthGate(unlockedBuilder: (_) => child ?? const SizedBox.shrink()),
     );
   }
 }

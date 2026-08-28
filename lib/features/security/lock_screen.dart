@@ -32,8 +32,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
 
   Future<void> _tryUnlock() async {
     setState(() => _busy = true);
-    final result =
-        await ref.read(authControllerProvider.notifier).unlockWithPin(_pin);
+    final result = await ref
+        .read(authControllerProvider.notifier)
+        .unlockWithPin(_pin);
     if (!mounted) {
       return;
     }
@@ -64,7 +65,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             const Spacer(flex: 2),
             Text('NotaKit', style: theme.textTheme.headlineSmall),
             const SizedBox(height: 8),
-            Text('Masukkan PIN untuk membuka', style: theme.textTheme.bodyMedium),
+            Text(
+              'Masukkan PIN untuk membuka',
+              style: theme.textTheme.bodyMedium,
+            ),
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -76,8 +80,9 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color:
-                        filled ? theme.colorScheme.primary : Colors.transparent,
+                    color: filled
+                        ? theme.colorScheme.primary
+                        : Colors.transparent,
                     border: Border.all(color: theme.colorScheme.outline),
                   ),
                 );
@@ -87,11 +92,14 @@ class _LockScreenState extends ConsumerState<LockScreen> {
             if (_error != null)
               Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
             const Spacer(),
-            _PinPad(onDigit: _onDigit, onDelete: () {
-              if (_pin.isNotEmpty && !_busy) {
-                setState(() => _pin = _pin.substring(0, _pin.length - 1));
-              }
-            }),
+            _PinPad(
+              onDigit: _onDigit,
+              onDelete: () {
+                if (_pin.isNotEmpty && !_busy) {
+                  setState(() => _pin = _pin.substring(0, _pin.length - 1));
+                }
+              },
+            ),
             if (canBiometric)
               Padding(
                 padding: const EdgeInsets.only(bottom: 24),
@@ -139,17 +147,17 @@ class _PinPad extends StatelessWidget {
                         child: k.isEmpty
                             ? const SizedBox.shrink()
                             : k == 'del'
-                                ? IconButton(
-                                    onPressed: onDelete,
-                                    icon: const Icon(Icons.backspace_outlined),
-                                  )
-                                : FilledButton.tonal(
-                                    onPressed: () => onDigit(k),
-                                    child: Text(k,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge),
-                                  ),
+                            ? IconButton(
+                                onPressed: onDelete,
+                                icon: const Icon(Icons.backspace_outlined),
+                              )
+                            : FilledButton.tonal(
+                                onPressed: () => onDigit(k),
+                                child: Text(
+                                  k,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ),
                       ),
                     ),
                   ),

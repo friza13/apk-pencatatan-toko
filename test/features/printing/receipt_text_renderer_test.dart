@@ -4,33 +4,35 @@ import 'package:notakit/features/printing/data/receipt_text_renderer.dart';
 ReceiptTextRenderer r(int w) => ReceiptTextRenderer(widthChars: w);
 
 String sample({required int width, String? footer}) => r(width).render(
-      storeName: 'Toko Budi Jaya',
-      number: 'INV00001',
-      dateTimeLocal: '25/08/2026 14:30',
-      lines: [
-        const ReceiptLine(
-            name: 'Kopi Arabica 200g',
-            qty: '2',
-            priceMinor: 12000,
-            totalMinor: 24000),
-        const ReceiptLine(
-            name: 'Gula Pasir 1kg',
-            qty: '1',
-            priceMinor: 15000,
-            totalMinor: 15000),
-      ],
-      subtotalMinor: 39000,
-      discountMinor: 4000,
+  storeName: 'Toko Budi Jaya',
+  number: 'INV00001',
+  dateTimeLocal: '25/08/2026 14:30',
+  lines: [
+    const ReceiptLine(
+      name: 'Kopi Arabica 200g',
+      qty: '2',
+      priceMinor: 12000,
+      totalMinor: 24000,
+    ),
+    const ReceiptLine(
+      name: 'Gula Pasir 1kg',
+      qty: '1',
+      priceMinor: 15000,
+      totalMinor: 15000,
+    ),
+  ],
+  subtotalMinor: 39000,
+  discountMinor: 4000,
 
-      shippingMinor: 5000,
-      roundingMinor: -1000,
-      grandTotalMinor: 39000,
-      paidMinor: 39000,
-      dueMinor: 0,
-      paymentLabel: 'TUNAI',
-      customerName: 'Ibu Sari',
-      footerNote: footer,
-    );
+  shippingMinor: 5000,
+  roundingMinor: -1000,
+  grandTotalMinor: 39000,
+  paidMinor: 39000,
+  dueMinor: 0,
+  paymentLabel: 'TUNAI',
+  customerName: 'Ibu Sari',
+  footerNote: footer,
+);
 
 void main() {
   test('58mm: every line <= 32 chars', () {
@@ -41,7 +43,7 @@ void main() {
   });
 
   test('80mm: every line <= 48 chars', () {
-    final out = sample(width: 48,);
+    final out = sample(width: 48);
     for (final line in out.split('\n')) {
       expect(line.length, lessThanOrEqualTo(48), reason: 'line: "$line"');
     }

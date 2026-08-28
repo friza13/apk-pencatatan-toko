@@ -78,15 +78,20 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           Expanded(
             child: state.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Gagal memuat produk.\n$e',
-                  textAlign: TextAlign.center)),
+              error: (e, _) => Center(
+                child: Text(
+                  'Gagal memuat produk.\n$e',
+                  textAlign: TextAlign.center,
+                ),
+              ),
               data: (s) {
                 if (s.items.isEmpty) {
                   return _EmptyProducts(hasQuery: s.query.isNotEmpty);
                 }
                 return RefreshIndicator(
-                  onRefresh:
-                      ref.read(productsControllerProvider.notifier).refresh,
+                  onRefresh: ref
+                      .read(productsControllerProvider.notifier)
+                      .refresh,
                   child: ListView.separated(
                     itemCount: s.items.length,
                     separatorBuilder: (_, _) =>
@@ -95,13 +100,18 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                       final p = s.items[i];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor:
-                              theme.colorScheme.primaryContainer,
-                          child: Icon(Icons.inventory_2_outlined,
-                              color: theme.colorScheme.primary, size: 20),
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          child: Icon(
+                            Icons.inventory_2_outlined,
+                            color: theme.colorScheme.primary,
+                            size: 20,
+                          ),
                         ),
-                        title: Text(p.name,
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        title: Text(
+                          p.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         subtitle: Text(
                           [
                             if (p.sku != null && p.sku!.isNotEmpty) p.sku!,
@@ -128,12 +138,12 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   }
 
   String _filterLabel(ProductFilter f) => switch (f) {
-        ProductFilter.all => 'Semua',
-        ProductFilter.active => 'Aktif',
-        ProductFilter.inactive => 'Nonaktif',
-        ProductFilter.lowStock => 'Stok rendah',
-        ProductFilter.outOfStock => 'Habis',
-      };
+    ProductFilter.all => 'Semua',
+    ProductFilter.active => 'Aktif',
+    ProductFilter.inactive => 'Nonaktif',
+    ProductFilter.lowStock => 'Stok rendah',
+    ProductFilter.outOfStock => 'Habis',
+  };
 }
 
 /// Stok status chip — never color-only (DESAIN §15/§29).
@@ -191,8 +201,7 @@ class _StockChip extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: fg),
           const SizedBox(width: 4),
-          Text(label,
-              style: theme.textTheme.labelSmall?.copyWith(color: fg)),
+          Text(label, style: theme.textTheme.labelSmall?.copyWith(color: fg)),
         ],
       ),
     );
@@ -215,8 +224,11 @@ class _EmptyProducts extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 64, color: Theme.of(context).colorScheme.outline),
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.outline,
+            ),
             const SizedBox(height: 16),
             const Text('Belum ada produk'),
             const SizedBox(height: 8),

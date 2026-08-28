@@ -108,9 +108,15 @@ class SaleTotals {
       other.grandTotalMinor == grandTotalMinor;
 
   @override
-  int get hashCode => Object.hash(subtotalMinor, discountTotalMinor,
-      serviceChargeMinor, shippingFeeMinor, taxTotalMinor, roundingMinor,
-      grandTotalMinor);
+  int get hashCode => Object.hash(
+    subtotalMinor,
+    discountTotalMinor,
+    serviceChargeMinor,
+    shippingFeeMinor,
+    taxTotalMinor,
+    roundingMinor,
+    grandTotalMinor,
+  );
 }
 
 /// Input for [computeSaleTotals].
@@ -151,16 +157,22 @@ SaleTotals computeSaleTotals(SaleTotalsInput input) {
     subtotal += line;
   }
 
-  final discountedBase =
-      MoneyPolicy.applyOrderDiscount(subtotal, input.orderDiscountLevel1PercentBp,
-          input.orderDiscountLevel2PercentBp, input.orderDiscountFixedMinor);
+  final discountedBase = MoneyPolicy.applyOrderDiscount(
+    subtotal,
+    input.orderDiscountLevel1PercentBp,
+    input.orderDiscountLevel2PercentBp,
+    input.orderDiscountFixedMinor,
+  );
   final discountTotal = subtotal - discountedBase;
 
-  final serviceCharge =
-      MoneyPolicy.percentOfMinor(discountedBase, input.serviceChargeBp);
+  final serviceCharge = MoneyPolicy.percentOfMinor(
+    discountedBase,
+    input.serviceChargeBp,
+  );
   final tax = MoneyPolicy.percentOfMinor(discountedBase, input.taxRateBp);
 
-  final computed = discountedBase + serviceCharge + input.shippingFeeMinor + tax;
+  final computed =
+      discountedBase + serviceCharge + input.shippingFeeMinor + tax;
   final rounding = MoneyPolicy.denominationRoundingAdjustment(
     computed,
     input.denomination,

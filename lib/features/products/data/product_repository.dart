@@ -17,10 +17,11 @@ class ProductRepository {
     ProductFilter filter = ProductFilter.all,
   }) async {
     final q = query.trim().toLowerCase();
-    final rows = await (_db.select(_db.products)
-          ..where((t) => t.businessId.equals(businessId))
-          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
-        .get();
+    final rows =
+        await (_db.select(_db.products)
+              ..where((t) => t.businessId.equals(businessId))
+              ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+            .get();
 
     Iterable<Product> result = rows;
     if (q.isNotEmpty) {
@@ -53,9 +54,9 @@ class ProductRepository {
     return result.toList();
   }
 
-  Future<Product?> byId(int id) =>
-      (_db.select(_db.products)..where((t) => t.id.equals(id)))
-          .getSingleOrNull();
+  Future<Product?> byId(int id) => (_db.select(
+    _db.products,
+  )..where((t) => t.id.equals(id))).getSingleOrNull();
 
   /// Full aggregate load for the detail screen.
   Future<ProductDetail?> detail(int id) async {
@@ -63,35 +64,32 @@ class ProductRepository {
     if (product == null) {
       return null;
     }
-    final variants =
-        await (_db.select(_db.productVariants)
-              ..where((t) => t.productId.equals(id)))
-            .get();
-    final unitRows = await (_db.select(_db.productUnits).join([
-      innerJoin(_db.units, _db.units.id.equalsExp(_db.productUnits.unitId)),
-    ])
-          ..where(_db.productUnits.productId.equals(id)))
-        .get()
-        .then(
-      (rows) => rows
-          .map((r) => (
-                entry: r.readTable(_db.productUnits),
-                unitName: r.readTable(_db.units).name,
-                unitCode: r.readTable(_db.units).code,
-              ))
-          .toList(),
-    );
-    return ProductDetail(
-      product: product,
-      variants: variants,
-      units: unitRows,
-    );
+    final variants = await (_db.select(
+      _db.productVariants,
+    )..where((t) => t.productId.equals(id))).get();
+    final unitRows =
+        await (_db.select(_db.productUnits).join([
+          innerJoin(_db.units, _db.units.id.equalsExp(_db.productUnits.unitId)),
+        ])..where(_db.productUnits.productId.equals(id))).get().then(
+          (rows) => rows
+              .map(
+                (r) => (
+                  entry: r.readTable(_db.productUnits),
+                  unitName: r.readTable(_db.units).name,
+                  unitCode: r.readTable(_db.units).code,
+                ),
+              )
+              .toList(),
+        );
+    return ProductDetail(product: product, variants: variants, units: unitRows);
   }
 
   /// Creates the whole aggregate in one transaction.
   Future<int> createProduct(ProductDraft draft) {
     return _db.transaction(() async {
-      final productId = await _db.into(_db.products).insert(
+      final productId = await _db
+          .into(_db.products)
+          .insert(
             ProductsCompanion.insert(
               businessId: draft.businessId,
               name: draft.name,
@@ -116,22 +114,30 @@ class ProductRepository {
           );
 
       for (final u in draft.units) {
-        await _db.into(_db.productUnits).insert(ProductUnitsCompanion.insert(
-              productId: productId,
-              unitId: u.unitId,
-              conversionToBaseMicro: u.conversionToBaseMicro,
-              salePriceOverrideMinor: Value(u.salePriceOverrideMinor),
-            ));
+        await _db
+            .into(_db.productUnits)
+            .insert(
+              ProductUnitsCompanion.insert(
+                productId: productId,
+                unitId: u.unitId,
+                conversionToBaseMicro: u.conversionToBaseMicro,
+                salePriceOverrideMinor: Value(u.salePriceOverrideMinor),
+              ),
+            );
       }
 
       for (final v in draft.variants) {
-        await _db.into(_db.productVariants).insert(ProductVariantsCompanion.insert(
-              productId: productId,
-              name: v.name,
-              sku: Value(v.sku),
-              costPriceMinor: Value(v.costPriceMinor),
-              salePriceMinor: Value(v.salePriceMinor),
-            ));
+        await _db
+            .into(_db.productVariants)
+            .insert(
+              ProductVariantsCompanion.insert(
+                productId: productId,
+                name: v.name,
+                sku: Value(v.sku),
+                costPriceMinor: Value(v.costPriceMinor),
+                salePriceMinor: Value(v.salePriceMinor),
+              ),
+            );
       }
 
       await _replaceTierPrices(productId, draft.businessId, draft.tierPrices);
@@ -142,51 +148,62 @@ class ProductRepository {
   /// Replaces the aggregate contents with [draft] (children replaced whole).
   Future<void> updateProduct(int productId, ProductDraft draft) {
     return _db.transaction(() async {
-      await (_db.update(_db.products)..where((t) => t.id.equals(productId)))
-          .write(ProductsCompanion(
-        name: Value(draft.name),
-        categoryId: Value(draft.categoryId),
-        type: Value(draft.type),
-        sku: Value(draft.sku),
-        barcode: Value(draft.barcode),
-        baseUnitId: Value(draft.baseUnitId),
-        costPriceMinor: Value(draft.costPriceMinor),
-        salePriceMinor: Value(draft.salePriceMinor),
-        wholesalePriceMinor: Value(draft.wholesalePriceMinor),
-        minStockMicro: Value(draft.minStockMicro),
-        trackStock: Value(draft.trackStock),
-        description: Value(draft.description),
-        notes: Value(draft.notes),
-        marketplaceSkuTokopedia: Value(draft.skuTokopedia),
-        marketplaceSkuTiktok: Value(draft.skuTiktok),
-        marketplaceSkuShopee: Value(draft.skuShopee),
-        weightGrams: Value(draft.weightGrams),
-        volumeMl: Value(draft.volumeMl),
-      ));
+      await (_db.update(
+        _db.products,
+      )..where((t) => t.id.equals(productId))).write(
+        ProductsCompanion(
+          name: Value(draft.name),
+          categoryId: Value(draft.categoryId),
+          type: Value(draft.type),
+          sku: Value(draft.sku),
+          barcode: Value(draft.barcode),
+          baseUnitId: Value(draft.baseUnitId),
+          costPriceMinor: Value(draft.costPriceMinor),
+          salePriceMinor: Value(draft.salePriceMinor),
+          wholesalePriceMinor: Value(draft.wholesalePriceMinor),
+          minStockMicro: Value(draft.minStockMicro),
+          trackStock: Value(draft.trackStock),
+          description: Value(draft.description),
+          notes: Value(draft.notes),
+          marketplaceSkuTokopedia: Value(draft.skuTokopedia),
+          marketplaceSkuTiktok: Value(draft.skuTiktok),
+          marketplaceSkuShopee: Value(draft.skuShopee),
+          weightGrams: Value(draft.weightGrams),
+          volumeMl: Value(draft.volumeMl),
+        ),
+      );
 
-      await (_db.delete(_db.productUnits)
-            ..where((t) => t.productId.equals(productId)))
-          .go();
+      await (_db.delete(
+        _db.productUnits,
+      )..where((t) => t.productId.equals(productId))).go();
       for (final u in draft.units) {
-        await _db.into(_db.productUnits).insert(ProductUnitsCompanion.insert(
-              productId: productId,
-              unitId: u.unitId,
-              conversionToBaseMicro: u.conversionToBaseMicro,
-              salePriceOverrideMinor: Value(u.salePriceOverrideMinor),
-            ));
+        await _db
+            .into(_db.productUnits)
+            .insert(
+              ProductUnitsCompanion.insert(
+                productId: productId,
+                unitId: u.unitId,
+                conversionToBaseMicro: u.conversionToBaseMicro,
+                salePriceOverrideMinor: Value(u.salePriceOverrideMinor),
+              ),
+            );
       }
 
-      await (_db.delete(_db.productVariants)
-            ..where((t) => t.productId.equals(productId)))
-          .go();
+      await (_db.delete(
+        _db.productVariants,
+      )..where((t) => t.productId.equals(productId))).go();
       for (final v in draft.variants) {
-        await _db.into(_db.productVariants).insert(ProductVariantsCompanion.insert(
-              productId: productId,
-              name: v.name,
-              sku: Value(v.sku),
-              costPriceMinor: Value(v.costPriceMinor),
-              salePriceMinor: Value(v.salePriceMinor),
-            ));
+        await _db
+            .into(_db.productVariants)
+            .insert(
+              ProductVariantsCompanion.insert(
+                productId: productId,
+                name: v.name,
+                sku: Value(v.sku),
+                costPriceMinor: Value(v.costPriceMinor),
+                salePriceMinor: Value(v.salePriceMinor),
+              ),
+            );
       }
 
       await _replaceTierPrices(productId, draft.businessId, draft.tierPrices);
@@ -198,15 +215,19 @@ class ProductRepository {
     int businessId,
     List<TierPriceInput> tierPrices,
   ) async {
-    await (_db.delete(_db.productPrices)
-          ..where((t) => t.productId.equals(productId)))
-        .go();
+    await (_db.delete(
+      _db.productPrices,
+    )..where((t) => t.productId.equals(productId))).go();
     for (final tp in tierPrices) {
-      await _db.into(_db.productPrices).insert(ProductPricesCompanion.insert(
-            productId: productId,
-            priceTierId: Value(tp.tierId),
-            priceMinor: tp.priceMinor,
-          ));
+      await _db
+          .into(_db.productPrices)
+          .insert(
+            ProductPricesCompanion.insert(
+              productId: productId,
+              priceTierId: Value(tp.tierId),
+              priceMinor: tp.priceMinor,
+            ),
+          );
     }
   }
 
@@ -249,9 +270,9 @@ class ProductDraft {
     List<ProductUnitInput>? units,
     List<VariantInput>? variants,
     List<TierPriceInput>? tierPrices,
-  })  : units = units ?? [],
-        variants = variants ?? [],
-        tierPrices = tierPrices ?? [];
+  }) : units = units ?? [],
+       variants = variants ?? [],
+       tierPrices = tierPrices ?? [];
 
   final int businessId;
   String name;
@@ -280,7 +301,7 @@ class ProductDraft {
 
 class ProductUnitInput {
   ProductUnitInput({required this.unitId, required String conversionToBase})
-      : conversionToBaseMicro = toMicro(conversionToBase);
+    : conversionToBaseMicro = toMicro(conversionToBase);
 
   final int unitId;
   final int conversionToBaseMicro;
@@ -288,7 +309,12 @@ class ProductUnitInput {
 }
 
 class VariantInput {
-  VariantInput({required this.name, this.sku, this.costPriceMinor, this.salePriceMinor});
+  VariantInput({
+    required this.name,
+    this.sku,
+    this.costPriceMinor,
+    this.salePriceMinor,
+  });
 
   final String name;
   final String? sku;

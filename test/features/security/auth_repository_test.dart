@@ -39,17 +39,23 @@ void main() {
 
   tearDown(() async => db.close());
 
-  test('fresh install is not onboarded; ensureDbKey creates persistent key',
-      () async {
-    expect(await repo.isOnboarded(), isFalse);
-    final key1 = await repo.ensureDbKey();
-    final key2 = await repo.ensureDbKey();
-    expect(key1, key2, reason: 'key must be created once');
-    expect(key1.length, 64);
-  });
+  test(
+    'fresh install is not onboarded; ensureDbKey creates persistent key',
+    () async {
+      expect(await repo.isOnboarded(), isFalse);
+      final key1 = await repo.ensureDbKey();
+      final key2 = await repo.ensureDbKey();
+      expect(key1, key2, reason: 'key must be created once');
+      expect(key1.length, 64);
+    },
+  );
 
   test('onboard creates owner+business and PIN verifier', () async {
-    await repo.onboard(ownerName: 'Budi', businessName: 'Toko Budi', pin: '123456');
+    await repo.onboard(
+      ownerName: 'Budi',
+      businessName: 'Toko Budi',
+      pin: '123456',
+    );
 
     expect(await repo.isOnboarded(), isTrue);
     expect(await repo.verifyPin('123456'), isTrue);
@@ -92,8 +98,10 @@ void main() {
 
   test('changePin requires correct old pin', () async {
     await repo.onboard(ownerName: 'A', businessName: 'T', pin: '111111');
-    expect(() => repo.changePin(oldPin: '999999', newPin: '222222'),
-        throwsArgumentError);
+    expect(
+      () => repo.changePin(oldPin: '999999', newPin: '222222'),
+      throwsArgumentError,
+    );
 
     await repo.changePin(oldPin: '111111', newPin: '222222');
     expect(await repo.verifyPin('111111'), isFalse);

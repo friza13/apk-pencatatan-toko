@@ -13,16 +13,16 @@ class StockCardScreen extends ConsumerWidget {
   final int productId;
 
   String _typeLabel(String t) => switch (t) {
-        'opening_balance' => 'Stok awal',
-        'purchase_in' => 'Pembelian',
-        'sale_out' => 'Penjualan',
-        'sales_return_in' => 'Retur penjualan',
-        'purchase_return_out' => 'Retur pembelian',
-        'adjustment_in' => 'Penyesuaian (+)',
-        'adjustment_out' => 'Penyesuaian (-)',
-        'stock_opname' => 'Opname',
-        _ => t,
-      };
+    'opening_balance' => 'Stok awal',
+    'purchase_in' => 'Pembelian',
+    'sale_out' => 'Penjualan',
+    'sales_return_in' => 'Retur penjualan',
+    'purchase_return_out' => 'Retur pembelian',
+    'adjustment_in' => 'Penyesuaian (+)',
+    'adjustment_out' => 'Penyesuaian (-)',
+    'stock_opname' => 'Opname',
+    _ => t,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -65,24 +65,18 @@ class StockCardScreen extends ConsumerWidget {
                 isThreeLine: note.isNotEmpty,
                 title: Text(_typeLabel(m.movementType)),
                 subtitle: Text(
-                  [
-                    df.format(occurredAt),
-                    if (note.isNotEmpty) note,
-                  ].join('\n'),
+                  [df.format(occurredAt), if (note.isNotEmpty) note].join('\n'),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: Text(
                   '${positive ? '+' : ''}${microToDecimalString(qtyMicro)}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: positive
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.error,
-                      ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: positive
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.error,
+                  ),
                 ),
               );
             },

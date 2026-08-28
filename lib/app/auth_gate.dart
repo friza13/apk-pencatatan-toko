@@ -18,20 +18,18 @@ class AuthGate extends ConsumerWidget {
 
     return state.when(
       loading: () => const _Splash(),
-      error: (e, _) => _Splash(message: 'Terjadi kesalahan saat memuat data. '
-          'Periksa penyimpanan lalu buka ulang aplikasi.'),
+      error: (e, _) => _Splash(
+        message:
+            'Terjadi kesalahan saat memuat data. '
+            'Periksa penyimpanan lalu buka ulang aplikasi.',
+      ),
       data: (auth) {
         // Gated screens live outside the app's Navigator, so they carry
         // their own one-page Navigator (TextField overlays need it).
         Widget gate(Widget screen) => Navigator(
-              onDidRemovePage: (page) {},
-              pages: [
-                MaterialPage<void>(
-                  key: ValueKey(auth.phase),
-                  child: screen,
-                ),
-              ],
-            );
+          onDidRemovePage: (page) {},
+          pages: [MaterialPage<void>(key: ValueKey(auth.phase), child: screen)],
+        );
 
         switch (auth.phase) {
           case AuthPhase.booting:
@@ -59,10 +57,7 @@ class _Splash extends StatelessWidget {
       body: Center(
         child: message == null
             ? const CircularProgressIndicator()
-            : Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(message!),
-              ),
+            : Padding(padding: const EdgeInsets.all(24), child: Text(message!)),
       ),
     );
   }

@@ -11,26 +11,34 @@ class DemoDataSeeder {
   final AppDatabase _db;
 
   Future<void> seed(int businessId) async {
-    final existing =
-        await (_db.select(_db.products)..limit(1)).get();
+    final existing = await (_db.select(_db.products)..limit(1)).get();
     if (existing.isNotEmpty) return; // jangan dobel jika sudah ada data
 
-    final unit = await (_db.select(_db.units)
-          ..where((t) => t.code.equals('pcs')))
-        .getSingleOrNull();
+    final unit = await (_db.select(
+      _db.units,
+    )..where((t) => t.code.equals('pcs'))).getSingleOrNull();
     if (unit == null) return;
 
-    Future<int> product(String name, int cost, int price, int stock,
-            {String? sku}) async {
-      final id = await _db.into(_db.products).insert(ProductsCompanion.insert(
-            businessId: businessId,
-            name: name,
-            sku: Value(sku),
-            baseUnitId: unit.id,
-            costPriceMinor: Value(cost),
-            salePriceMinor: Value(price),
-            minStockMicro: const Value(5000000),
-          ));
+    Future<int> product(
+      String name,
+      int cost,
+      int price,
+      int stock, {
+      String? sku,
+    }) async {
+      final id = await _db
+          .into(_db.products)
+          .insert(
+            ProductsCompanion.insert(
+              businessId: businessId,
+              name: name,
+              sku: Value(sku),
+              baseUnitId: unit.id,
+              costPriceMinor: Value(cost),
+              salePriceMinor: Value(price),
+              minStockMicro: const Value(5000000),
+            ),
+          );
       if (stock > 0) {
         await InventoryService(_db).setOpeningBalance(id, stock * 1000000);
       }
@@ -43,20 +51,32 @@ class DemoDataSeeder {
     await product('Keripik Kentang', 8500, 13000, 40, sku: 'KRK-001');
     await product('Air Mineral 600ml', 2500, 4000, 60, sku: 'AMR-001');
 
-    await _db.into(_db.customers).insert(CustomersCompanion.insert(
-          businessId: businessId,
-          name: 'Ibu Sari',
-          phone: const Value('081234567890'),
-        ));
-    await _db.into(_db.customers).insert(CustomersCompanion.insert(
-          businessId: businessId,
-          name: 'Warung Bu Yati',
-          phone: const Value('089876543210'),
-        ));
+    await _db
+        .into(_db.customers)
+        .insert(
+          CustomersCompanion.insert(
+            businessId: businessId,
+            name: 'Ibu Sari',
+            phone: const Value('081234567890'),
+          ),
+        );
+    await _db
+        .into(_db.customers)
+        .insert(
+          CustomersCompanion.insert(
+            businessId: businessId,
+            name: 'Warung Bu Yati',
+            phone: const Value('089876543210'),
+          ),
+        );
 
-    await _db.into(_db.suppliers).insert(SuppliersCompanion.insert(
-          businessId: businessId,
-          name: 'CV Sumber Kopi Nusantara',
-        ));
+    await _db
+        .into(_db.suppliers)
+        .insert(
+          SuppliersCompanion.insert(
+            businessId: businessId,
+            name: 'CV Sumber Kopi Nusantara',
+          ),
+        );
   }
 }

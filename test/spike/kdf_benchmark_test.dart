@@ -9,8 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// The final iteration count is chosen from these numbers plus a device
 /// slowdown factor and recorded in docs/SPIKE_REPORT.md + AI_DECISION_LOG.
 void main() {
-  test('PBKDF2-HMAC-SHA256 benchmark across candidate iterations',
-      () async {
+  test('PBKDF2-HMAC-SHA256 benchmark across candidate iterations', () async {
     const password = 'correct horse battery staple';
     final salt = Uint8List.fromList(List<int>.filled(16, 7));
 
@@ -25,16 +24,20 @@ void main() {
       );
 
       final sw = Stopwatch()..start();
-      final key =
-          await algo.deriveKeyFromPassword(password: password, nonce: salt);
+      final key = await algo.deriveKeyFromPassword(
+        password: password,
+        nonce: salt,
+      );
       sw.stop();
 
       final bytes = await key.extractBytes();
       expect(bytes, hasLength(32));
 
       // ignore: avoid_print
-      print('[SPIKE-KDF] iterations=$iterations '
-          '-> ${sw.elapsedMilliseconds} ms');
+      print(
+        '[SPIKE-KDF] iterations=$iterations '
+        '-> ${sw.elapsedMilliseconds} ms',
+      );
     }
   });
 }

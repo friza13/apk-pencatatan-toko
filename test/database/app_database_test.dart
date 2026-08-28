@@ -15,8 +15,9 @@ void main() {
   });
 
   test('host runtime can open the database engine', () async {
-    final result =
-        await db.customSelect('SELECT sqlite_version() AS v').getSingle();
+    final result = await db
+        .customSelect('SELECT sqlite_version() AS v')
+        .getSingle();
     // ignore: avoid_print
     print('[P1] host sqlite version = ${result.data['v']}');
   });
@@ -63,10 +64,12 @@ void main() {
       'marketplace_order_lines',
     };
 
-    final tables = await db.customSelect(
-      "SELECT name FROM sqlite_master WHERE type = 'table' "
-      "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'drift_%'",
-    ).get();
+    final tables = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' "
+          "AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'drift_%'",
+        )
+        .get();
 
     final names = tables.map((t) => t.data['name'] as String).toSet();
     final missing = expectedTables.difference(names);
@@ -74,17 +77,21 @@ void main() {
   });
 
   test('business seed then product requires valid unit (FK)', () async {
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'Owner'),
-        );
-    final businessId = await db.into(db.businesses).insert(
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'Owner'));
+    final businessId = await db
+        .into(db.businesses)
+        .insert(
           BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko Contoh'),
         );
     expect(businessId, greaterThan(0));
 
     var rejected = false;
     try {
-      await db.into(db.products).insert(
+      await db
+          .into(db.products)
+          .insert(
             ProductsCompanion.insert(
               businessId: businessId,
               name: 'Orphan',
@@ -98,19 +105,21 @@ void main() {
   });
 
   test('payment amount must be positive (CHECK)', () async {
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'O'),
-        );
-    final businessId = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'B'),
-        );
-    final accountId = await db.into(db.accounts).insert(
-          AccountsCompanion.insert(businessId: businessId, name: 'Kas'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'O'));
+    final businessId = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'B'));
+    final accountId = await db
+        .into(db.accounts)
+        .insert(AccountsCompanion.insert(businessId: businessId, name: 'Kas'));
 
     var rejected = false;
     try {
-      await db.into(db.payments).insert(
+      await db
+          .into(db.payments)
+          .insert(
             PaymentsCompanion.insert(
               businessId: businessId,
               direction: 'in',
@@ -126,14 +135,16 @@ void main() {
   });
 
   test('unit code unique per business', () async {
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'O'),
-        );
-    final businessId = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'B'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'O'));
+    final businessId = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'B'));
 
-    await db.into(db.units).insert(
+    await db
+        .into(db.units)
+        .insert(
           UnitsCompanion.insert(
             businessId: businessId,
             code: 'pcs',
@@ -143,7 +154,9 @@ void main() {
 
     var rejected = false;
     try {
-      await db.into(db.units).insert(
+      await db
+          .into(db.units)
+          .insert(
             UnitsCompanion.insert(
               businessId: businessId,
               code: 'pcs',
@@ -156,34 +169,36 @@ void main() {
     expect(rejected, isTrue);
   });
 
-  test('timestamps are stored as UTC epoch millis and read back as UTC',
-      () async {
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'O'),
-        );
-    final id = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'O2'),
-        );
-    expect(id, greaterThan(ownerId));
+  test(
+    'timestamps are stored as UTC epoch millis and read back as UTC',
+    () async {
+      final ownerId = await db
+          .into(db.owners)
+          .insert(OwnersCompanion.insert(name: 'O'));
+      final id = await db
+          .into(db.owners)
+          .insert(OwnersCompanion.insert(name: 'O2'));
+      expect(id, greaterThan(ownerId));
 
-    final row = await (db.select(db.owners)
-          ..where((t) => t.id.equals(id)))
-        .getSingle();
-    expect(row.createdAt.isUtc, isTrue);
+      final row = await (db.select(
+        db.owners,
+      )..where((t) => t.id.equals(id))).getSingle();
+      expect(row.createdAt.isUtc, isTrue);
 
-    final raw = await db.customSelect(
-      'SELECT created_at FROM owners WHERE id = $id',
-    ).getSingle();
-    expect(raw.data['created_at'], row.createdAt.millisecondsSinceEpoch);
-  });
+      final raw = await db
+          .customSelect('SELECT created_at FROM owners WHERE id = $id')
+          .getSingle();
+      expect(raw.data['created_at'], row.createdAt.millisecondsSinceEpoch);
+    },
+  );
 
   test('sale status constrained to lifecycle values (D-009)', () async {
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'O'),
-        );
-    final businessId = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'B'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'O'));
+    final businessId = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'B'));
 
     var rejected = false;
     try {

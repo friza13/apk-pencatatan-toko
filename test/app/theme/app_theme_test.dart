@@ -15,14 +15,8 @@ void main() {
     });
 
     test('themes declare Inter as font family', () {
-      expect(
-        AppTheme.light().textTheme.bodyMedium?.fontFamily,
-        'Inter',
-      );
-      expect(
-        AppTheme.dark().textTheme.bodyMedium?.fontFamily,
-        'Inter',
-      );
+      expect(AppTheme.light().textTheme.bodyMedium?.fontFamily, 'Inter');
+      expect(AppTheme.dark().textTheme.bodyMedium?.fontFamily, 'Inter');
     });
 
     test('light and dark themes build without error', () {

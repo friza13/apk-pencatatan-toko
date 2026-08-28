@@ -5,6 +5,6 @@ import '../data/backup_service.dart';
 
 final FutureProvider<BackupService> backupServiceProvider =
     FutureProvider<BackupService>((ref) async {
-  final db = await ref.watch(appDatabaseProvider.future);
-  return BackupService(db);
-});
+      final db = await ref.watch(appDatabaseProvider.future);
+      return BackupService(db);
+    });

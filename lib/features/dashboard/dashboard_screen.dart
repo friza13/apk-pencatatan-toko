@@ -19,9 +19,7 @@ class DashboardScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(businessAsync.value?.name ?? 'Beranda'),
-      ),
+      appBar: AppBar(title: Text(businessAsync.value?.name ?? 'Beranda')),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab-dash-nota',
         onPressed: () => context.push('/sales/new'),
@@ -36,10 +34,8 @@ class DashboardScreen extends ConsumerWidget {
           if (business == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          final offset =
-              BusinessClock.offsetMinutesFor(business.timezone);
-          final (s, e) =
-              repository.rangeFor(ReportPeriod.today, offset);
+          final offset = BusinessClock.offsetMinutesFor(business.timezone);
+          final (s, e) = repository.rangeFor(ReportPeriod.today, offset);
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -60,63 +56,90 @@ class DashboardScreen extends ConsumerWidget {
                   builder: (context, snap) {
                     if (!snap.hasData) {
                       return const Center(
-                          child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: CircularProgressIndicator(),
-                      ));
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
                     }
                     final sum = snap.data!;
-                    return Column(children: [
-                      Row(children: [
-                        Expanded(
-                            child: _kpi(context, 'Omzet hari ini',
-                                formatMinor(sum.totalMinor))),
-                        const SizedBox(width: 12),
-                        Expanded(
-                            child: _kpi(context, 'Laba hari ini',
-                                formatMinor(sum.profitMinor))),
-                      ]),
-                      const SizedBox(height: 12),
-                      Row(children: [
-                        Expanded(
-                            child: _kpi(
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _kpi(
+                                context,
+                                'Omzet hari ini',
+                                formatMinor(sum.totalMinor),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _kpi(
+                                context,
+                                'Laba hari ini',
+                                formatMinor(sum.profitMinor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _kpi(
                                 context,
                                 'Transaksi',
-                                sum.transactionCount.toString())),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FutureBuilder<int>(
-                            future: repository
-                                .receivablesOutstanding(business.id),
-                            builder: (_, rs) => _kpi(context, 'Piutang',
-                                formatMinor(rs.data ?? 0)),
-                          ),
+                                sum.transactionCount.toString(),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FutureBuilder<int>(
+                                future: repository.receivablesOutstanding(
+                                  business.id,
+                                ),
+                                builder: (_, rs) => _kpi(
+                                  context,
+                                  'Piutang',
+                                  formatMinor(rs.data ?? 0),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ]),
-                    ]);
+                      ],
+                    );
                   },
                 ),
                 const SizedBox(height: 24),
                 Text('Aksi cepat', style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Wrap(spacing: 8, runSpacing: 8, children: [
-                  ActionChip(
-                    avatar: const Icon(Icons.add_shopping_cart, size: 18),
-                    label: const Text('Buat Nota'),
-                    onPressed: () => context.push('/sales/new'),
-                  ),
-                  ActionChip(
-                    avatar: const Icon(Icons.inventory_2_outlined, size: 18),
-                    label: const Text('Produk'),
-                    onPressed: () => context.go('/products'),
-                  ),
-                  ActionChip(
-                    avatar:
-                        const Icon(Icons.request_quote_outlined, size: 18),
-                    label: const Text('Piutang'),
-                    onPressed: () => context.push('/more/piutang'),
-                  ),
-                ]),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ActionChip(
+                      avatar: const Icon(Icons.add_shopping_cart, size: 18),
+                      label: const Text('Buat Nota'),
+                      onPressed: () => context.push('/sales/new'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.inventory_2_outlined, size: 18),
+                      label: const Text('Produk'),
+                      onPressed: () => context.go('/products'),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(
+                        Icons.request_quote_outlined,
+                        size: 18,
+                      ),
+                      label: const Text('Piutang'),
+                      onPressed: () => context.push('/more/piutang'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 FutureBuilder<List<String>>(
                   future: repository.lowStockNames(business.id),
@@ -125,8 +148,10 @@ class DashboardScreen extends ConsumerWidget {
                     if (names.isEmpty) return const SizedBox.shrink();
                     return Card(
                       child: ListTile(
-                        leading: Icon(Icons.warning_amber_rounded,
-                            color: theme.colorScheme.error),
+                        leading: Icon(
+                          Icons.warning_amber_rounded,
+                          color: theme.colorScheme.error,
+                        ),
                         title: const Text('Stok menipis'),
                         subtitle: Text(names.join(', ')),
                         trailing: const Icon(Icons.chevron_right),
@@ -152,22 +177,23 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   Widget _kpi(BuildContext context, String label, String value) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 6),
-              FittedBox(
-                child: Text(value,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 6),
+          FittedBox(
+            child: Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
           ),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }

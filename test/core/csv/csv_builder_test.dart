@@ -7,7 +7,10 @@ void main() {
       final csv = CsvBuilder()
         ..row(['Tanggal', 'Nota', 'Total'])
         ..row(['2026-08-25', 'INV00001', 36000]);
-      expect(csv.build(includeBom: false), 'Tanggal,Nota,Total\r\n2026-08-25,INV00001,36000');
+      expect(
+        csv.build(includeBom: false),
+        'Tanggal,Nota,Total\r\n2026-08-25,INV00001,36000',
+      );
     });
 
     test('quotes doubled; comma forces quoting', () {

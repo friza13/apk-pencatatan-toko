@@ -21,42 +21,46 @@ class Sales extends Table with IdColumn, AuditColumns {
   IntColumn get businessId =>
       integer().references(Businesses, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get customerId => integer()
-      .nullable()
-      .references(Customers, #id, onDelete: KeyAction.setNull)();
+  IntColumn get customerId => integer().nullable().references(
+    Customers,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
-  IntColumn get salesmanId => integer()
-      .nullable()
-      .references(Salesmen, #id, onDelete: KeyAction.setNull)();
+  IntColumn get salesmanId => integer().nullable().references(
+    Salesmen,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   /// Unique per business once finalized; drafts may be unnumbered (D-021).
   TextColumn get number => text().nullable()();
 
   /// Lifecycle per D-009: draft → confirmed → paid/partially_paid/credit,
   /// with voided as terminal side-state.
-  TextColumn get status => text()
-      .customConstraint(
-        "NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','confirmed',"
-        "'paid','partially_paid','credit','voided'))",
-      )();
+  TextColumn get status => text().customConstraint(
+    "NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','confirmed',"
+    "'paid','partially_paid','credit','voided'))",
+  )();
 
   /// Business mode of the transaction.
-  TextColumn get saleType => text()
-      .customConstraint(
-        "NOT NULL DEFAULT 'retail' CHECK (sale_type IN ('retail','wholesale',"
-        "'restaurant','online','minimarket'))",
-      )();
+  TextColumn get saleType => text().customConstraint(
+    "NOT NULL DEFAULT 'retail' CHECK (sale_type IN ('retail','wholesale',"
+    "'restaurant','online','minimarket'))",
+  )();
 
   /// Reserved for future restaurant order types; unused in MVP UI (#16).
   TextColumn get orderType => text().nullable()();
 
   IntColumn get subtotalMinor => integer().withDefault(const Constant(0))();
 
-  IntColumn get discountTotalMinor => integer().withDefault(const Constant(0))();
+  IntColumn get discountTotalMinor =>
+      integer().withDefault(const Constant(0))();
 
   IntColumn get taxTotalMinor => integer().withDefault(const Constant(0))();
 
-  IntColumn get serviceChargeMinor => integer().withDefault(const Constant(0))();
+  IntColumn get serviceChargeMinor =>
+      integer().withDefault(const Constant(0))();
 
   IntColumn get shippingFeeMinor => integer().withDefault(const Constant(0))();
 
@@ -87,13 +91,17 @@ class SaleLines extends Table with IdColumn {
   IntColumn get saleId =>
       integer().references(Sales, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get productId => integer()
-      .nullable()
-      .references(Products, #id, onDelete: KeyAction.restrict)();
+  IntColumn get productId => integer().nullable().references(
+    Products,
+    #id,
+    onDelete: KeyAction.restrict,
+  )();
 
-  IntColumn get variantId => integer()
-      .nullable()
-      .references(ProductVariants, #id, onDelete: KeyAction.restrict)();
+  IntColumn get variantId => integer().nullable().references(
+    ProductVariants,
+    #id,
+    onDelete: KeyAction.restrict,
+  )();
 
   TextColumn get productNameSnapshot => text()();
 

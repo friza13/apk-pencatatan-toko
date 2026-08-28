@@ -48,16 +48,15 @@ class MarketplaceOrders extends Table with IdColumn {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {marketplaceAccountId, externalOrderId},
-      ];
+    {marketplaceAccountId, externalOrderId},
+  ];
 }
 
 class MarketplaceOrderLines extends Table with IdColumn {
   IntColumn get marketplaceOrderId =>
       integer().references(MarketplaceOrders, #id)();
 
-  IntColumn get productId =>
-      integer().nullable().references(Products, #id)();
+  IntColumn get productId => integer().nullable().references(Products, #id)();
 
   TextColumn get externalSku => text().nullable()();
 

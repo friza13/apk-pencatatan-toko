@@ -37,16 +37,19 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     await repoFuture; // ensure defaults seeded
     final business = await ref.read(currentBusinessProvider.future);
     final db = await ref.read(appDatabaseProvider.future);
-    final rows = await (db.select(db.customers)
-          ..where((t) => t.businessId.equals(business.id))
-          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
-        .get();
+    final rows =
+        await (db.select(db.customers)
+              ..where((t) => t.businessId.equals(business.id))
+              ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+            .get();
     Iterable<Customer> result = rows;
     final query = q.trim().toLowerCase();
     if (query.isNotEmpty) {
-      result = result.where((c) =>
-          c.name.toLowerCase().contains(query) ||
-          (c.phone ?? '').contains(query));
+      result = result.where(
+        (c) =>
+            c.name.toLowerCase().contains(query) ||
+            (c.phone ?? '').contains(query),
+      );
     }
     if (!mounted) return;
     setState(() {
@@ -63,13 +66,19 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       isScrollControlled: true,
       builder: (context) => Padding(
         padding: EdgeInsets.fromLTRB(
-            16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+          16,
+          16,
+          16,
+          MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(existing == null ? 'Tambah Pelanggan' : 'Edit Pelanggan',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              existing == null ? 'Tambah Pelanggan' : 'Edit Pelanggan',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: nameC,
@@ -96,17 +105,26 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     final business = await ref.read(currentBusinessProvider.future);
     final db = await ref.read(appDatabaseProvider.future);
     if (existing == null) {
-      await db.into(db.customers).insert(CustomersCompanion.insert(
-            businessId: business.id,
-            name: nameC.text.trim(),
-            phone: Value(phoneC.text.trim().isEmpty ? null : phoneC.text.trim()),
-          ));
+      await db
+          .into(db.customers)
+          .insert(
+            CustomersCompanion.insert(
+              businessId: business.id,
+              name: nameC.text.trim(),
+              phone: Value(
+                phoneC.text.trim().isEmpty ? null : phoneC.text.trim(),
+              ),
+            ),
+          );
     } else {
-      await (db.update(db.customers)..where((t) => t.id.equals(existing.id)))
-          .write(CustomersCompanion(
-        name: Value(nameC.text.trim()),
-        phone: Value(phoneC.text.trim().isEmpty ? null : phoneC.text.trim()),
-      ));
+      await (db.update(
+        db.customers,
+      )..where((t) => t.id.equals(existing.id))).write(
+        CustomersCompanion(
+          name: Value(nameC.text.trim()),
+          phone: Value(phoneC.text.trim().isEmpty ? null : phoneC.text.trim()),
+        ),
+      );
     }
     await _reload(_search.text);
   }
@@ -121,55 +139,62 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
         icon: const Icon(Icons.person_add_alt_1),
         label: const Text('Pelanggan'),
       ),
-      body: Column(children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: TextField(
-            controller: _search,
-            decoration: const InputDecoration(
-              hintText: 'Cari nama atau telepon...',
-              prefixIcon: Icon(Icons.search),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: TextField(
+              controller: _search,
+              decoration: const InputDecoration(
+                hintText: 'Cari nama atau telepon...',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onSubmitted: _reload,
             ),
-            onSubmitted: _reload,
           ),
-        ),
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _items.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.people_outline,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.outline),
-                          const SizedBox(height: 16),
-                          const Text('Belum ada pelanggan'),
-                          const SizedBox(height: 8),
-                          const Text(
-                              'Tambahkan pelanggan untuk mulai mencatat piutang.'),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      itemCount: _items.length,
-                      separatorBuilder: (_, _) =>
-                          Divider(height: 1, color: Theme.of(context).dividerColor),
-                      itemBuilder: (context, i) {
-                        final c = _items[i];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            child: Text(c.name.isEmpty ? '?' : c.name[0]),
-                          ),
-                          title: Text(c.name),
-                          subtitle: Text(c.phone ?? '-'),
-                          onTap: () => _openForm(c),
-                        );
-                      },
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _items.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Belum ada pelanggan'),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Tambahkan pelanggan untuk mulai mencatat piutang.',
+                        ),
+                      ],
                     ),
-        ),
-      ]),
+                  )
+                : ListView.separated(
+                    itemCount: _items.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: Theme.of(context).dividerColor,
+                    ),
+                    itemBuilder: (context, i) {
+                      final c = _items[i];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          child: Text(c.name.isEmpty ? '?' : c.name[0]),
+                        ),
+                        title: Text(c.name),
+                        subtitle: Text(c.phone ?? '-'),
+                        onTap: () => _openForm(c),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

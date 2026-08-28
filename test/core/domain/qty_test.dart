@@ -18,7 +18,10 @@ void main() {
 
     test('equality and comparison', () {
       expect(Qty.fromString('2'), Qty.fromString('2.0'));
-      expect(Qty.fromString('3').compareTo(Qty.fromString('2.5')), greaterThan(0));
+      expect(
+        Qty.fromString('3').compareTo(Qty.fromString('2.5')),
+        greaterThan(0),
+      );
     });
 
     test('add/subtract', () {

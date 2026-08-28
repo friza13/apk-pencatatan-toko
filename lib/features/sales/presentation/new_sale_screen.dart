@@ -72,24 +72,25 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Pilih Varian / Satuan',
                       style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       p.name,
                       style: Theme.of(sheetCtx).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(sheetCtx).colorScheme.onSurfaceVariant,
-                          ),
+                        color: Theme.of(sheetCtx).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -131,7 +132,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                             '${p.trackStock ? ' • Stok: ${microToDecimalString(v.stockQuantityMicro)}' : ''}',
                           ),
                           onTap: () {
-                            ref.read(cartProvider.notifier).addVariantOrUnit(
+                            ref
+                                .read(cartProvider.notifier)
+                                .addVariantOrUnit(
                                   product: p,
                                   variantId: v.id,
                                   variantName: v.name,
@@ -163,11 +166,14 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                             'Harga: ${formatMinor(u.entry.salePriceOverrideMinor ?? ((p.salePriceMinor * u.entry.conversionToBaseMicro) ~/ quantityScale))}',
                           ),
                           onTap: () {
-                            final price = u.entry.salePriceOverrideMinor ??
+                            final price =
+                                u.entry.salePriceOverrideMinor ??
                                 ((p.salePriceMinor *
                                         u.entry.conversionToBaseMicro) ~/
                                     quantityScale);
-                            ref.read(cartProvider.notifier).addVariantOrUnit(
+                            ref
+                                .read(cartProvider.notifier)
+                                .addVariantOrUnit(
                                   product: p,
                                   unitId: u.entry.unitId,
                                   unitName: u.unitName,

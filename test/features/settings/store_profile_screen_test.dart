@@ -9,15 +9,18 @@ import 'package:notakit/features/security/providers.dart';
 import 'package:notakit/features/settings/presentation/store_profile_screen.dart';
 
 void main() {
-  testWidgets('StoreProfileScreen loads existing data and updates business',
-      (tester) async {
+  testWidgets('StoreProfileScreen loads existing data and updates business', (
+    tester,
+  ) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
     final ownerId = await db
         .into(db.owners)
         .insert(OwnersCompanion.insert(name: 'Budi Owner'));
-    final business = await db.into(db.businesses).insertReturning(
+    final business = await db
+        .into(db.businesses)
+        .insertReturning(
           BusinessesCompanion.insert(
             ownerId: ownerId,
             name: 'Toko Lama',
@@ -60,9 +63,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify in database
-    final updated = await (db.select(db.businesses)
-          ..where((t) => t.id.equals(business.id)))
-        .getSingle();
+    final updated = await (db.select(
+      db.businesses,
+    )..where((t) => t.id.equals(business.id))).getSingle();
     expect(updated.name, 'Toko Baru Jaya');
     expect(updated.footerNote, 'Barang yang dibeli tidak dapat ditukar.');
   });

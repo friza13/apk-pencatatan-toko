@@ -42,7 +42,10 @@ void main() {
   group('computeSaleTotals', () {
     test('case A: subtotal + tax 11%', () {
       final totals = computeSaleTotals(
-        const SaleTotalsInput(lineNetTotalsMinor: [20000, 5500], taxRateBp: 1100),
+        const SaleTotalsInput(
+          lineNetTotalsMinor: [20000, 5500],
+          taxRateBp: 1100,
+        ),
       );
       // subtotal 25.500; base after 10% nota disc? none here; tax 11% of
       // 25.500 = 2.805
@@ -83,21 +86,19 @@ void main() {
       expect(totals.grandTotalMinor, 24040);
     });
 
-    test('case D: denomination rounding rounds down and records adjustment',
-        () {
-      final totals = computeSaleTotals(
-        const SaleTotalsInput(
-          lineNetTotalsMinor: [12345],
-          denomination: 500,
-        ),
-      );
-      // computed 12.345 → rounded to 12.000, adjustment −345
-      expect(totals.roundingMinor, -345);
-      expect(totals.grandTotalMinor, 12000);
-    });
+    test(
+      'case D: denomination rounding rounds down and records adjustment',
+      () {
+        final totals = computeSaleTotals(
+          const SaleTotalsInput(lineNetTotalsMinor: [12345], denomination: 500),
+        );
+        // computed 12.345 → rounded to 12.000, adjustment −345
+        expect(totals.roundingMinor, -345);
+        expect(totals.grandTotalMinor, 12000);
+      },
+    );
 
-    test('case E: guard — massive fixed discount yields zero grand total',
-        () {
+    test('case E: guard — massive fixed discount yields zero grand total', () {
       final totals = computeSaleTotals(
         const SaleTotalsInput(
           lineNetTotalsMinor: [10000],
@@ -111,8 +112,12 @@ void main() {
     });
 
     test('totals equality is value-based', () {
-      final a = computeSaleTotals(const SaleTotalsInput(lineNetTotalsMinor: [100]));
-      final b = computeSaleTotals(const SaleTotalsInput(lineNetTotalsMinor: [100]));
+      final a = computeSaleTotals(
+        const SaleTotalsInput(lineNetTotalsMinor: [100]),
+      );
+      final b = computeSaleTotals(
+        const SaleTotalsInput(lineNetTotalsMinor: [100]),
+      );
       expect(a, equals(b));
     });
   });

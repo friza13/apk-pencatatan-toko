@@ -28,22 +28,24 @@ class Purchases extends Table with IdColumn, AuditColumns {
   IntColumn get businessId =>
       integer().references(Businesses, #id, onDelete: KeyAction.cascade)();
 
-  IntColumn get supplierId => integer()
-      .nullable()
-      .references(Suppliers, #id, onDelete: KeyAction.setNull)();
+  IntColumn get supplierId => integer().nullable().references(
+    Suppliers,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 
   TextColumn get number => text().nullable()();
 
   /// `draft`, `finalized`, `voided`.
-  TextColumn get status => text()
-      .customConstraint(
-        "NOT NULL DEFAULT 'draft' "
-        "CHECK (status IN ('draft','finalized','voided'))",
-      )();
+  TextColumn get status => text().customConstraint(
+    "NOT NULL DEFAULT 'draft' "
+    "CHECK (status IN ('draft','finalized','voided'))",
+  )();
 
   IntColumn get subtotalMinor => integer().withDefault(const Constant(0))();
 
-  IntColumn get discountTotalMinor => integer().withDefault(const Constant(0))();
+  IntColumn get discountTotalMinor =>
+      integer().withDefault(const Constant(0))();
 
   IntColumn get taxTotalMinor => integer().withDefault(const Constant(0))();
 
@@ -74,9 +76,11 @@ class PurchaseLines extends Table with IdColumn {
   IntColumn get productId =>
       integer().references(Products, #id, onDelete: KeyAction.restrict)();
 
-  IntColumn get variantId => integer()
-      .nullable()
-      .references(ProductVariants, #id, onDelete: KeyAction.restrict)();
+  IntColumn get variantId => integer().nullable().references(
+    ProductVariants,
+    #id,
+    onDelete: KeyAction.restrict,
+  )();
 
   IntColumn get qtyMicro => integer()();
 

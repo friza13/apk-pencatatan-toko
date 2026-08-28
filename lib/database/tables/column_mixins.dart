@@ -18,9 +18,11 @@ mixin IdColumn on Table {
 
 /// Creation/update timestamps stored as UTC epoch millis (D-012).
 mixin AuditColumns on Table {
-  IntColumn get createdAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get createdAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 
-  IntColumn get updatedAt =>
-      integer().map(const EpochMillisUtcConverter()).clientDefault(nowUtcMillis)();
+  IntColumn get updatedAt => integer()
+      .map(const EpochMillisUtcConverter())
+      .clientDefault(nowUtcMillis)();
 }

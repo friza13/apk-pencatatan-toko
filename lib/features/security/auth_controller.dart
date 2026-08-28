@@ -24,12 +24,15 @@ class AuthState {
 
   bool get canUseBiometric => biometricAvailable && biometricEnabled;
 
-  AuthState copyWith({AuthPhase? phase, bool? biometricAvailable, bool? biometricEnabled}) =>
-      AuthState(
-        phase: phase ?? this.phase,
-        biometricAvailable: biometricAvailable ?? this.biometricAvailable,
-        biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-      );
+  AuthState copyWith({
+    AuthPhase? phase,
+    bool? biometricAvailable,
+    bool? biometricEnabled,
+  }) => AuthState(
+    phase: phase ?? this.phase,
+    biometricAvailable: biometricAvailable ?? this.biometricAvailable,
+    biometricEnabled: biometricEnabled ?? this.biometricEnabled,
+  );
 }
 
 /// Result of an unlock attempt.
@@ -39,7 +42,10 @@ class AuthController extends AsyncNotifier<AuthState> {
   @override
   Future<AuthState> build() async {
     final db = await ref.watch(appDatabaseProvider.future);
-    final repo = AuthRepository(db: db, secureStore: ref.watch(secureStoreProvider));
+    final repo = AuthRepository(
+      db: db,
+      secureStore: ref.watch(secureStoreProvider),
+    );
 
     if (!await repo.isOnboarded()) {
       return const AuthState(phase: AuthPhase.needsOnboarding);
@@ -62,10 +68,10 @@ class AuthController extends AsyncNotifier<AuthState> {
   }
 
   Future<AuthRepository> _repo() async => AuthRepository(
-        db: await ref.read(appDatabaseProvider.future),
-        secureStore: ref.read(secureStoreProvider),
-        hasher: ref.read(pinHasherProvider),
-      );
+    db: await ref.read(appDatabaseProvider.future),
+    secureStore: ref.read(secureStoreProvider),
+    hasher: ref.read(pinHasherProvider),
+  );
 
   /// Creates the owner/business and unlocks immediately.
   Future<int> onboard({
@@ -75,13 +81,15 @@ class AuthController extends AsyncNotifier<AuthState> {
   }) async {
     final repo = await _repo();
     final businessId = await repo.onboard(
-        ownerName: ownerName, businessName: businessName, pin: pin);
-    final current = state.value ??
-        const AuthState(phase: AuthPhase.needsOnboarding);
-    state = AsyncData(current.copyWith(
-      phase: AuthPhase.unlocked,
-      biometricEnabled: false,
-    ));
+      ownerName: ownerName,
+      businessName: businessName,
+      pin: pin,
+    );
+    final current =
+        state.value ?? const AuthState(phase: AuthPhase.needsOnboarding);
+    state = AsyncData(
+      current.copyWith(phase: AuthPhase.unlocked, biometricEnabled: false),
+    );
     return businessId;
   }
 
@@ -91,8 +99,10 @@ class AuthController extends AsyncNotifier<AuthState> {
       return UnlockResult.wrongPin;
     }
     state = AsyncData(
-        (state.value ?? const AuthState(phase: AuthPhase.locked))
-            .copyWith(phase: AuthPhase.unlocked));
+      (state.value ?? const AuthState(phase: AuthPhase.locked)).copyWith(
+        phase: AuthPhase.unlocked,
+      ),
+    );
     return UnlockResult.success;
   }
 
@@ -120,5 +130,6 @@ class AuthController extends AsyncNotifier<AuthState> {
   }
 }
 
-final authControllerProvider =
-    AsyncNotifierProvider<AuthController, AuthState>(AuthController.new);
+final authControllerProvider = AsyncNotifierProvider<AuthController, AuthState>(
+  AuthController.new,
+);

@@ -15,10 +15,7 @@ void main() {
   });
 
   test('reads back as UTC datetime', () {
-    final dt = DateTime.fromMillisecondsSinceEpoch(
-      1790000000000,
-      isUtc: true,
-    );
+    final dt = DateTime.fromMillisecondsSinceEpoch(1790000000000, isUtc: true);
     expect(converter.fromSql(1790000000000), dt);
   });
 

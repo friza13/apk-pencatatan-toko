@@ -42,8 +42,7 @@ void main() {
       // The whole range stays within the local Aug 25.
       expect(
         DateTime.fromMillisecondsSinceEpoch(end - 1, isUtc: true),
-        _utc(2026, 8, 25, 16, 59, 59)
-            .add(const Duration(milliseconds: 999)),
+        _utc(2026, 8, 25, 16, 59, 59).add(const Duration(milliseconds: 999)),
       );
     });
 
@@ -65,8 +64,7 @@ void main() {
       );
       expect(
         DateTime.fromMillisecondsSinceEpoch(end - 1, isUtc: true),
-        _utc(2026, 8, 25, 23, 59, 59)
-            .add(const Duration(milliseconds: 999)),
+        _utc(2026, 8, 25, 23, 59, 59).add(const Duration(milliseconds: 999)),
       );
     });
   });
