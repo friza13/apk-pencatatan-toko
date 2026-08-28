@@ -18,6 +18,7 @@ import '../../features/sales/presentation/sale_detail_screen.dart';
 import '../../features/sales/presentation/sales_screen.dart';
 import '../../features/settings/more_menu_screen.dart';
 import '../../features/settings/presentation/references_screen.dart';
+import '../../features/settings/presentation/store_profile_screen.dart';
 
 /// App routes. Bottom navigation has exactly 5 destinations (DESAIN.md §8):
 /// Beranda, Penjualan, Produk, Laporan, Lainnya.
@@ -145,6 +146,10 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'references',
                   builder: (context, state) => const ReferencesScreen(),
+                ),
+                GoRoute(
+                  path: 'settings',
+                  builder: (context, state) => const StoreProfileScreen(),
                 ),
               ],
             ),

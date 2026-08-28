@@ -58,7 +58,7 @@ class MoreMenuScreen extends StatelessWidget {
           _MenuTile(
             icon: Icons.settings_outlined,
             label: 'Pengaturan',
-            onTap: () => _soon(context),
+            onTap: () => context.push('/more/settings'),
           ),
         ],
       ),
