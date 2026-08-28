@@ -241,11 +241,16 @@ Recovery milestone ini memperbaiki dan memverifikasi:
 - **PASS VERIFIED NOW:** `flutter analyze` dan `flutter test` pada environment
   ini lulus setelah recovery fix.
 
-**Belum terverifikasi sekarang:** debug APK build dan integration test Android.
-Statusnya tetap **PASS FROM PREVIOUS EXECUTION LOG** sampai dapat dijalankan pada
-environment Android yang sesuai.
+**PASS VERIFIED NOW:** debug APK build dan `integration_test/e2e_recovery_test.dart`
+berhasil dijalankan pada `sdk gphone64 x86 64` / Android 15 API 35. Test mencakup
+jual → backup → wipe produk → restore → verifikasi.
+
+Catatan environment: instalasi pertama sempat mendapat
+`INSTALL_FAILED_INSUFFICIENT_STORAGE`, lalu Flutter menghapus aplikasi lama dan
+instalasi/test berhasil. Ini adalah kondisi emulator, bukan kegagalan test.
 
 P0 restore, credit ownership, dan silent invalid payment sudah ditutup. P0
 financial reversal ditutup dengan guard eksplisit, bukan dengan klaim bahwa
-refund sudah tersedia. MVP belum boleh masuk Phase 2 sampai flow return/refund
-atau kebijakan void yang lebih lengkap diputuskan dan diuji.
+refund sudah tersedia. Recovery gate teknis MVP lulus, tetapi MVP belum boleh
+dianggap feature-complete atau masuk Phase 2 sebelum sisa P1 dan keputusan
+return/refund ditangani.

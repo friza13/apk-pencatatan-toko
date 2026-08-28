@@ -43,8 +43,8 @@
 | P7 | Receivable & cash: payment allocation, piutang UI, kas/bank/expense/transfer, arus kas | ✅ selesai; P0 consistency follow-up |
 | P8 | Reports: dashboard KPI, penjualan, laba (COGS snapshot), nilai stok, CSV export | ✅ selesai; precision follow-up |
 | P9 | Printing/PDF: receipt renderer 58/80/A4, share, printer profile (+transport adapter) | ✅ renderer/PDF/share; transport deferred |
-| P10 | Backup: `.nkb` container, validate/preview/temp-db/atomic-swap restore, audit | ⚠ restore recovery hardened; Android crash/integration verification pending |
-| P11 | Hardening MVP: integration/recovery tests, demo data, perf pass → **MVP DONE** | ✅ milestone tercapai; analyzer/unit suite verified, Android flow pending |
+| P10 | Backup: `.nkb` container, validate/preview/temp-db/atomic-swap restore, audit | ✅ recovery path verified on Android emulator; crash injection still pending |
+| P11 | Hardening MVP: integration/recovery tests, demo data, perf pass → **MVP DONE** | ✅ analyzer, full tests, debug APK, and Android recovery integration verified; release hardening follow-ups remain |
 | P12–P13 | Phase 2/3 (restaurant/minimarket/purchase lanjutan/marketplace adapter) | deferred |
 
 Setiap fase P1+ akan dipecah menjadi detailed task plan (gaya bite-sized/TDD) yang ditulis **just-in-time** sebelum eksekusi fase tersebut ke `docs/superpowers/plans/YYYY-MM-DD-<fase>.md`. Di bawah ini detail penuh untuk P0 + SPIKE.
