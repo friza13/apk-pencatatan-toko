@@ -81,11 +81,12 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
       final service = await ref.read(backupServiceProvider.future);
       final docs = await getDocsDir();
+      final db = await ref.read(appDatabaseProvider.future);
       final file = await service.createBackup(
         sourceDbPath: '$docs/notakit.db',
         saveToPath: '$docs/notakit-${_stamp()}.nkb',
         password: password,
-        schemaVersion: 1,
+        schemaVersion: db.schemaVersion,
         appVersion: '1.0.0-dev',
         recordCounts: counts,
         dbKeyHex: await readDbKeyHex(),
