@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/units/quantity.dart';
 import '../../../database/app_database.dart';
 import '../../products/controllers/products_providers.dart';
-import '../../security/providers.dart';
 import 'widgets/stock_action_sheet.dart';
 
 /// Stok screen (DESAIN §15): list produk + aksi Stok Awal / Penyesuaian /

@@ -37,10 +37,10 @@ Future<void> showStockActionSheet({
         final currentStockMicro = selectedVariantId == null
             ? product.stockQuantityMicro
             : (variants
-                    .where((v) => v.id == selectedVariantId)
-                    .firstOrNull
-                    ?.stockQuantityMicro ??
-                0);
+                      .where((v) => v.id == selectedVariantId)
+                      .firstOrNull
+                      ?.stockQuantityMicro ??
+                  0);
 
         final hasOpening = allMovements.any(
           (m) =>
@@ -118,7 +118,6 @@ Future<void> showStockActionSheet({
                     ),
                     items: [
                       const DropdownMenuItem<int?>(
-                        value: null,
                         child: Text('Semua / Produk Utama'),
                       ),
                       for (final v in variants)

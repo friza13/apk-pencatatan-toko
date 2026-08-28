@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -130,10 +129,7 @@ void main() {
 
       // Fill initial stock
       expect(find.widgetWithText(TextField, 'Stok awal'), findsOneWidget);
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Stok awal'),
-        '50',
-      );
+      await tester.enterText(find.widgetWithText(TextField, 'Stok awal'), '50');
 
       // Submit
       final submitBtn = find.text('Simpan Produk');

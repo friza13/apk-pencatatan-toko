@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -64,9 +63,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp(
-            home: ProductDetailScreen(productId: prodId),
-          ),
+          child: MaterialApp(home: ProductDetailScreen(productId: prodId)),
         ),
       );
       await tester.pumpAndSettle();
@@ -84,7 +81,10 @@ void main() {
       expect(find.text('Tambah'), findsOneWidget);
 
       // Enter +5
-      await tester.enterText(find.widgetWithText(TextField, 'Jumlah tambah (+)'), '5');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Jumlah tambah (+)'),
+        '5',
+      );
       await tester.tap(find.text('Simpan Perubahan Stok'));
       await tester.pumpAndSettle();
 

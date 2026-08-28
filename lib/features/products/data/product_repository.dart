@@ -116,22 +116,23 @@ class ProductRepository {
       if (draft.trackStock &&
           draft.type == 'goods' &&
           draft.initialStockMicro > 0) {
-        await _db.into(_db.stockMovements).insert(
-          StockMovementsCompanion.insert(
-            businessId: draft.businessId,
-            productId: productId,
-            movementType: 'opening_balance',
-            qtyBaseMicro: draft.initialStockMicro,
-            unitCostMinor: Value(draft.costPriceMinor),
-            note: const Value('Stok awal saat pendaftaran produk'),
-          ),
-        );
-        await (_db.update(_db.products)..where((t) => t.id.equals(productId)))
-            .write(
-              ProductsCompanion(
-                stockQuantityMicro: Value(draft.initialStockMicro),
+        await _db
+            .into(_db.stockMovements)
+            .insert(
+              StockMovementsCompanion.insert(
+                businessId: draft.businessId,
+                productId: productId,
+                movementType: 'opening_balance',
+                qtyBaseMicro: draft.initialStockMicro,
+                unitCostMinor: Value(draft.costPriceMinor),
+                note: const Value('Stok awal saat pendaftaran produk'),
               ),
             );
+        await (_db.update(
+          _db.products,
+        )..where((t) => t.id.equals(productId))).write(
+          ProductsCompanion(stockQuantityMicro: Value(draft.initialStockMicro)),
+        );
       }
 
       for (final u in draft.units) {
@@ -168,17 +169,21 @@ class ProductRepository {
         if (draft.trackStock &&
             draft.type == 'goods' &&
             v.initialStockMicro > 0) {
-          await _db.into(_db.stockMovements).insert(
-            StockMovementsCompanion.insert(
-              businessId: draft.businessId,
-              productId: productId,
-              variantId: Value(variantId),
-              movementType: 'opening_balance',
-              qtyBaseMicro: v.initialStockMicro,
-              unitCostMinor: Value(v.costPriceMinor ?? draft.costPriceMinor),
-              note: const Value('Stok awal saat pendaftaran varian'),
-            ),
-          );
+          await _db
+              .into(_db.stockMovements)
+              .insert(
+                StockMovementsCompanion.insert(
+                  businessId: draft.businessId,
+                  productId: productId,
+                  variantId: Value(variantId),
+                  movementType: 'opening_balance',
+                  qtyBaseMicro: v.initialStockMicro,
+                  unitCostMinor: Value(
+                    v.costPriceMinor ?? draft.costPriceMinor,
+                  ),
+                  note: const Value('Stok awal saat pendaftaran varian'),
+                ),
+              );
         }
       }
 

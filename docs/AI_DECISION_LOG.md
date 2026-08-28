@@ -444,3 +444,18 @@ behavior aktual.
 **Consequences:** P0 recovery fixes dikerjakan berurutan dengan checkpoint Git
 lokal. Setiap fix wajib memiliki test dan verification yang relevan. Temuan P1
 tetap menjadi backlog, sedangkan fitur Phase 2/3 tetap deferred.
+
+---
+
+## D-029 — Seamless Initial Stock & Integrated Stock Actions UX
+
+**Context:** Pengguna membutuhkan kemampuan mengisi stok awal secara langsung pada form pendaftaran produk/varian tanpa harus berpindah ke menu lain, serta membutuhkan akses cepat pengaturan stok (tambah/kurang/opname) dan kartu stok langsung dari halaman Detail Produk.
+
+**Decision:**
+1. `ProductDraft` dan `VariantInput` mendukung `initialStockMicro`. Saat `ProductRepository.createProduct` dipanggil dengan `trackStock: true` dan `initialStockMicro > 0`, sistem secara atomic membuat mutasi `OPENING_BALANCE` di `stock_movements` dan memperbarui saldo stok (memenuhi `D-014`).
+2. Disediakan `StockActionSheet` reusable (`lib/features/inventory/presentation/widgets/stock_action_sheet.dart`) yang mendukung aksi Stok Awal, Tambah, Kurang, Opname, serta pemilihan varian produk.
+3. `ProductDetailScreen` menyediakan tombol `[ Atur Stok ]` dan `[ Kartu Stok ]` langsung di kartu Stok, dengan pembaruan reaktif via `productDetailProvider`.
+4. `StockScreen` mendukung tap pada seluruh item untuk langsung membuka `StockActionSheet` dengan deteksi varian otomatis.
+
+**Consequences:** Seluruh mutasi stok tetap tercatat 100% pada immutable ledger `stock_movements`. Form produk dan layar detail menjadi jauh lebih intuitif dan terintegrasi.
+

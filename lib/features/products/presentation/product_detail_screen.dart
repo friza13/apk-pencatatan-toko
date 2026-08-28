@@ -93,10 +93,7 @@ class ProductDetailScreen extends ConsumerWidget {
                         : 'Tidak dilacak',
                   ),
                   if (p.trackStock)
-                    _kv(
-                      'Batas minimum',
-                      microToDecimalString(p.minStockMicro),
-                    ),
+                    _kv('Batas minimum', microToDecimalString(p.minStockMicro)),
                   if (p.trackStock) ...[
                     const SizedBox(height: 12),
                     Row(
@@ -197,9 +194,7 @@ class ProductDetailScreen extends ConsumerWidget {
                   ref.invalidate(productsControllerProvider);
                   navigator.pop();
                   messenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Status produk diperbarui.'),
-                    ),
+                    const SnackBar(content: Text('Status produk diperbarui.')),
                   );
                 },
               ),

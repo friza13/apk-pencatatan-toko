@@ -151,4 +151,3 @@ final productDetailProvider = FutureProvider.family<ProductDetail?, int>((
   final repo = await ref.watch(productRepositoryProvider.future);
   return repo.detail(id);
 });
-
