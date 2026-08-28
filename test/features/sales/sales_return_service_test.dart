@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:notakit/core/error/failures.dart';
@@ -99,6 +100,89 @@ void main() {
     },
   );
 
+  test(
+    'duplicate return lines are aggregated and preserve one return line',
+    () async {
+      await (db.update(db.products)..where((t) => t.id.equals(productId)))
+          .write(const ProductsCompanion(salePriceMinor: Value(3)));
+      final sale = await SalesService(db).checkout(
+        CheckoutInput(
+          lines: [
+            SaleLineInput(
+              productId: productId,
+              qtyMicro: 1000000,
+              unitPriceMinor: 3,
+            ),
+          ],
+          accountId: accountId,
+          paidNowMinor: 3,
+        ),
+      );
+      final line = (await db.select(db.saleLines).get()).single;
+
+      final returned = await SalesReturnService(db).createReturn(
+        SalesReturnInput(
+          saleId: sale.saleId,
+          lines: [
+            SalesReturnLineInput(saleLineId: line.id, qtyBaseMicro: 400000),
+            SalesReturnLineInput(saleLineId: line.id, qtyBaseMicro: 600000),
+          ],
+          reason: 'retur duplikat',
+        ),
+      );
+
+      expect(returned.totalMinor, 3);
+      final returnLines = await db.select(db.salesReturnLines).get();
+      expect(returnLines, hasLength(1));
+      expect(returnLines.single.qtyBaseMicro, 1000000);
+      expect(returnLines.single.amountMinor, 3);
+    },
+  );
+
+  test('repeated partial returns allocate every original minor unit', () async {
+    await (db.update(db.products)..where((t) => t.id.equals(productId))).write(
+      const ProductsCompanion(salePriceMinor: Value(3)),
+    );
+    final sale = await SalesService(db).checkout(
+      CheckoutInput(
+        lines: [
+          SaleLineInput(
+            productId: productId,
+            qtyMicro: 1000000,
+            unitPriceMinor: 3,
+          ),
+        ],
+        accountId: accountId,
+        paidNowMinor: 3,
+      ),
+    );
+    final line = (await db.select(db.saleLines).get()).single;
+    await SalesReturnService(db).createReturn(
+      SalesReturnInput(
+        saleId: sale.saleId,
+        lines: [
+          SalesReturnLineInput(saleLineId: line.id, qtyBaseMicro: 400000),
+        ],
+        reason: 'retur sebagian 1',
+      ),
+    );
+    await SalesReturnService(db).createReturn(
+      SalesReturnInput(
+        saleId: sale.saleId,
+        lines: [
+          SalesReturnLineInput(saleLineId: line.id, qtyBaseMicro: 600000),
+        ],
+        reason: 'retur sebagian 2',
+      ),
+    );
+
+    final returnLines = await db.select(db.salesReturnLines).get();
+    expect(
+      returnLines.map((item) => item.amountMinor),
+      containsAllInOrder([1, 2]),
+    );
+    expect(returnLines.fold<int>(0, (sum, item) => sum + item.amountMinor), 3);
+  });
   test('return cannot exceed remaining sale quantity', () async {
     final sale = await SalesService(db).checkout(
       CheckoutInput(

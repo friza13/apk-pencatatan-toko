@@ -72,15 +72,54 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
+  static const requiredTableNames = <String>{
+    'owners',
+    'businesses',
+    'app_settings',
+    'activity_logs',
+    'app_notifications',
+    'backup_records',
+    'printer_profiles',
+    'categories',
+    'units',
+    'products',
+    'product_variants',
+    'product_units',
+    'customer_types',
+    'customers',
+    'salesmen',
+    'price_tiers',
+    'product_prices',
+    'customer_prices',
+    'sales',
+    'sale_lines',
+    'accounts',
+    'payments',
+    'receivables',
+    'receivable_payments',
+    'ledger_entries',
+    'stock_movements',
+    'suppliers',
+    'purchases',
+    'purchase_lines',
+    'sales_returns',
+    'sales_return_lines',
+    'purchase_returns',
+    'purchase_return_lines',
+    'marketplace_accounts',
+    'marketplace_orders',
+    'marketplace_order_lines',
+  };
+
   @override
   int get schemaVersion => 1;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-        },
-      );
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 }
 
 String _escapeSqlString(String value) => value.replaceAll("'", "''");

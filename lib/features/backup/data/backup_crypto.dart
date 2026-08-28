@@ -11,6 +11,8 @@ class BackupCrypto {
 
   static const String kdfAlgo = 'PBKDF2-HMAC-SHA256';
   static const int defaultIterations = 600000;
+  static const int minIterations = 100000;
+  static const int maxIterations = 2000000;
   static const int keyBits = 256;
   static const int saltBytes = 16;
   static const int nonceBytes = 12;
@@ -20,6 +22,12 @@ class BackupCrypto {
     required Uint8List salt,
     required int iterations,
   }) async {
+    if (iterations < minIterations || iterations > maxIterations) {
+      throw const FormatException('KDF iteration count is out of bounds.');
+    }
+    if (salt.length != saltBytes) {
+      throw const FormatException('KDF salt has an invalid length.');
+    }
     final pbkdf2 = Pbkdf2(
       macAlgorithm: Hmac.sha256(),
       iterations: iterations,
@@ -38,6 +46,9 @@ class BackupCrypto {
     required Uint8List nonce,
     required List<int> plain,
   }) async {
+    if (nonce.length != nonceBytes) {
+      throw const FormatException('AES-GCM nonce has an invalid length.');
+    }
     final algo = AesGcm.with256bits();
     final secretBox = await algo.encrypt(
       plain,

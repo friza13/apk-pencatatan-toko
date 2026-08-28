@@ -99,21 +99,45 @@ class ReportRepository {
 
     var total = 0;
     var paid = 0;
-    var due = 0;
     for (final s in salesRows) {
       total += s.grandTotalMinor;
       paid += s.paidTotalMinor;
-      due += s.dueTotalMinor;
     }
     final returns =
         await (_db.select(_db.salesReturns)..where(
               (t) =>
                   t.businessId.equals(businessId) &
                   t.createdAt.isBiggerOrEqualValue(startUtcMillis) &
-                  t.createdAt.isSmallerThanValue(endUtcMillis),
+                  t.createdAt.isSmallerThanValue(endUtcMillis) &
+                  t.voidedAt.isNull(),
             ))
             .get();
     total -= returns.fold<int>(0, (sum, item) => sum + item.totalMinor);
+
+    final saleIds = salesRows.map((sale) => sale.id).toList();
+    if (saleIds.isNotEmpty) {
+      final refunds =
+          await (_db.select(_db.payments)..where(
+                (t) =>
+                    t.saleId.isIn(saleIds) &
+                    t.purpose.equals('refund') &
+                    t.direction.equals('out') &
+                    t.paidAt.isBiggerOrEqualValue(startUtcMillis) &
+                    t.paidAt.isSmallerThanValue(endUtcMillis),
+              ))
+              .get();
+      paid -= refunds.fold<int>(0, (sum, refund) => sum + refund.amountMinor);
+    }
+    var due = 0;
+    if (saleIds.isNotEmpty) {
+      final receivables = await (_db.select(
+        _db.receivables,
+      )..where((t) => t.saleId.isIn(saleIds))).get();
+      due = receivables.fold<int>(
+        0,
+        (sum, receivable) => sum + receivable.remainingAmountMinor,
+      );
+    }
 
     // Gross profit: sum(line_total - qty_base x cost_snapshot).
     var profit = 0;
@@ -160,33 +184,78 @@ class ReportRepository {
     required int offsetMinutes,
     String statusFilter = 'all',
   }) async {
+    if (days <= 0) return [];
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
-    final result = <({DateTime dayLocalStartUtc, int totalMinor})>[];
-
+    final ranges = <({int start, int end})>[];
     for (var d = days - 1; d >= 0; d--) {
-      final (s, e) = BusinessClock.dayRangeUtcMillis(
+      final (start, end) = BusinessClock.dayRangeUtcMillis(
         now - d * BusinessClock.millisPerDay,
         offsetMinutes,
       );
-      final sumExp = _db.sales.grandTotalMinor.sum();
-
-      final query = _db.selectOnly(_db.sales)
-        ..addColumns([sumExp])
-        ..where(
-          _db.sales.businessId.equals(businessId) &
-              _db.sales.status.isIn(_countedStatuses) &
-              _db.sales.createdAt.isBiggerOrEqualValue(s) &
-              _db.sales.createdAt.isSmallerThanValue(e),
-        );
-
-      final row = await query.getSingle();
-      final total = row.read(sumExp) ?? 0;
-      result.add((
-        dayLocalStartUtc: DateTime.fromMillisecondsSinceEpoch(s, isUtc: true),
-        totalMinor: total,
-      ));
+      ranges.add((start: start, end: end));
     }
-    return result;
+
+    final totals = List<int>.filled(days, 0);
+    final start = ranges.first.start;
+    final end = ranges.last.end;
+    final sales =
+        await (_db.select(_db.sales)..where(
+              (t) =>
+                  t.businessId.equals(businessId) &
+                  t.createdAt.isBiggerOrEqualValue(start) &
+                  t.createdAt.isSmallerThanValue(end),
+            ))
+            .get();
+    for (final sale in sales) {
+      if (statusFilter != 'all' && sale.status != statusFilter) continue;
+      for (var i = 0; i < ranges.length; i++) {
+        final range = ranges[i];
+        if (sale.createdAt.millisecondsSinceEpoch >= range.start &&
+            sale.createdAt.millisecondsSinceEpoch < range.end &&
+            _countedStatuses.contains(sale.status)) {
+          totals[i] += sale.grandTotalMinor;
+          break;
+        }
+      }
+    }
+
+    final returnRows =
+        await (_db.select(_db.salesReturns).join([
+              innerJoin(
+                _db.sales,
+                _db.sales.id.equalsExp(_db.salesReturns.saleId),
+              ),
+            ])..where(
+              _db.salesReturns.businessId.equals(businessId) &
+                  _db.salesReturns.createdAt.isBiggerOrEqualValue(start) &
+                  _db.salesReturns.createdAt.isSmallerThanValue(end) &
+                  _db.salesReturns.voidedAt.isNull(),
+            ))
+            .get();
+    for (final row in returnRows) {
+      final sale = row.readTable(_db.sales);
+      if (statusFilter != 'all' && sale.status != statusFilter) continue;
+      if (!_countedStatuses.contains(sale.status)) continue;
+      final returned = row.readTable(_db.salesReturns);
+      for (var i = 0; i < ranges.length; i++) {
+        final range = ranges[i];
+        if (returned.createdAt.millisecondsSinceEpoch >= range.start &&
+            returned.createdAt.millisecondsSinceEpoch < range.end) {
+          totals[i] -= returned.totalMinor;
+          break;
+        }
+      }
+    }
+    return [
+      for (var i = 0; i < ranges.length; i++)
+        (
+          dayLocalStartUtc: DateTime.fromMillisecondsSinceEpoch(
+            ranges[i].start,
+            isUtc: true,
+          ),
+          totalMinor: totals[i],
+        ),
+    ];
   }
 
   /// Best sellers within the window.

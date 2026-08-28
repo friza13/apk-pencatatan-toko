@@ -28,12 +28,10 @@ class BackupService {
     required String dbPassphrase,
     int kdfIterations = BackupCrypto.defaultIterations,
   }) async {
-    // Consistent snapshot via VACUUM INTO on the live connection.
     final tmpSnap = File(
       '$sourceDbPath.backup-${DateTime.now().millisecondsSinceEpoch}.tmp',
     );
-    final exists = await tmpSnap.exists();
-    if (exists) {
+    if (await tmpSnap.exists()) {
       await tmpSnap.delete();
     }
     await _db.customStatement('VACUUM INTO ?', [tmpSnap.path]);
@@ -46,7 +44,6 @@ class BackupService {
       final nonce = Uint8List.fromList(
         List.generate(BackupCrypto.nonceBytes, (_) => rng.nextInt(256)),
       );
-
       final key = await BackupCrypto.deriveKey(
         password: password,
         salt: salt,
@@ -56,11 +53,9 @@ class BackupService {
       final archive = Archive();
       final dbBytes = await tmpSnap.readAsBytes();
       archive.addFile(ArchiveFile('database.sqlite', dbBytes.length, dbBytes));
-      final metaJson = jsonEncode({'db_key': dbKeyHex});
-      final metaBytes = NkbBytes.fromUtf8(metaJson);
+      final metaBytes = NkbBytes.fromUtf8(jsonEncode({'db_key': dbKeyHex}));
       archive.addFile(ArchiveFile('meta.json', metaBytes.length, metaBytes));
       final zipped = ZipEncoder().encode(archive);
-
       final encrypted = await BackupCrypto.encrypt(
         key: key,
         nonce: nonce,
@@ -75,7 +70,6 @@ class BackupService {
         kdfIterations: kdfIterations,
         checksumHex: NkbContainer.sha256Hex(encrypted),
       );
-
       final file = File(saveToPath);
       await file.writeAsBytes(
         NkbContainer.serialize(manifest: manifest, encryptedBlob: encrypted),
@@ -93,142 +87,256 @@ class BackupService {
     required File nkbFile,
     required String password,
   }) async {
-    final bytes = await nkbFile.readAsBytes();
-    final parsed = NkbContainer.parseRaw(bytes);
-    var manifest = parsed.manifest;
+    final parsed = NkbContainer.parseRaw(await nkbFile.readAsBytes());
+    _verifyChecksum(parsed.blob, parsed.manifest);
+    final cryptoParameters = _validateManifest(parsed.manifest, parsed.blob);
 
-    _verifyChecksum(parsed.blob, manifest);
-    if (parsed.blob.length < BackupCrypto.nonceBytes + 16) {
-      throw const BackupFormatException('Payload backup tidak lengkap.');
-    }
-
-    final kdfMap = manifest['kdf'];
-    final iterations = kdfMap is Map
-        ? ((kdfMap['iterations'] as num?) ?? BackupCrypto.defaultIterations)
-              .toInt()
-        : BackupCrypto.defaultIterations;
-
+    final key = await BackupCrypto.deriveKey(
+      password: password,
+      salt: cryptoParameters.salt,
+      iterations: cryptoParameters.iterations,
+    );
     List<int> clear;
     try {
-      final salt = Uint8List.fromList(
-        Uint8List.fromList(NkbBytes.unhex(manifest['salt'] as String? ?? '')),
-      );
-      final key = await BackupCrypto.deriveKey(
-        password: password,
-        salt: salt,
-        iterations: iterations,
-      );
       clear = await BackupCrypto.decrypt(key: key, blob: parsed.blob);
     } on Object {
       throw const BackupWrongPasswordException();
     }
 
-    final decoded = ZipDecoder().decodeBytes(clear);
-    String dbKeyHex = '';
-    Uint8List database = Uint8List(0);
-    for (final f in decoded) {
-      if (f.name == 'database.sqlite') {
-        database = Uint8List.fromList(f.content as List<int>);
-      } else if (f.name == 'meta.json') {
-        final meta = jsonDecode(utf8.decode(f.content as List<int>)) as Map;
-        dbKeyHex = meta['db_key']?.toString() ?? '';
+    final List<ArchiveFile> decoded;
+    try {
+      decoded = ZipDecoder().decodeBytes(clear).files;
+    } on Object {
+      throw const BackupFormatException('Payload backup bukan ZIP yang valid.');
+    }
+    String? dbKeyHex;
+    Uint8List? database;
+    for (final file in decoded) {
+      if (file.name == 'database.sqlite') {
+        database = Uint8List.fromList(file.content as List<int>);
+      } else if (file.name == 'meta.json') {
+        try {
+          final meta = jsonDecode(utf8.decode(file.content as List<int>));
+          if (meta is Map) {
+            dbKeyHex = meta['db_key']?.toString();
+          }
+        } on Object {
+          throw const BackupFormatException('Metadata backup rusak.');
+        }
       }
     }
-    if (dbKeyHex.isEmpty || database.isEmpty) {
+    if (dbKeyHex == null ||
+        !_isHexKey(dbKeyHex) ||
+        database == null ||
+        database.isEmpty) {
       throw const BackupFormatException('Payload backup tidak lengkap.');
     }
-    manifest = manifest;
-    final schemaVersion = (manifest['schema_version'] as num?)?.toInt() ?? 0;
-    if (schemaVersion > _db.schemaVersion) {
+
+    final schemaVersion = _intField(parsed.manifest, 'schema_version');
+    if (schemaVersion == null || schemaVersion > _db.schemaVersion) {
       throw BackupFormatException(
         'Backup dari versi aplikasi lebih baru. Perbarui aplikasi.',
       );
     }
-
     return RestorePreview(
-      createdAtIso: manifest['created_at']?.toString() ?? '',
+      createdAtIso: parsed.manifest['created_at']?.toString() ?? '',
       schemaVersion: schemaVersion,
-      recordCounts: _intMap(manifest['record_counts']),
+      recordCounts: _intMap(parsed.manifest['record_counts']),
       databaseBytes: database,
       dbKeyHex: dbKeyHex,
     );
   }
 
-  /// Stages decrypted DB to temp file, verifies integrity + completeness via
-  /// a probe connection, then atomically swaps into [targetDbPath]. Caller
-  /// must close/reopen connections around this call.
+  /// Stages decrypted DB, validates it, then performs a recoverable swap.
   Future<void> applyRestore({
     required RestorePreview preview,
     required String targetDbPath,
     required String dbPassphrase,
   }) async {
-    final staging = File(
-      '$targetDbPath.restore-${DateTime.now().millisecondsSinceEpoch}',
-    );
-    await staging.writeAsBytes(preview.databaseBytes, flush: true);
+    final stagingPath =
+        '$targetDbPath.restore-${DateTime.now().microsecondsSinceEpoch}';
+    final staging = File(stagingPath);
+    final previousPath =
+        '$targetDbPath.previous-${DateTime.now().microsecondsSinceEpoch}';
+    final previousFiles = <({String current, String previous})>[];
+    var installed = false;
 
-    final probe = AppDatabase(
-      openEncryptedExecutor(file: staging, passphrase: dbPassphrase),
-    );
     try {
-      final okRow = await probe
+      await _cleanupSidecars(stagingPath);
+      await staging.writeAsBytes(preview.databaseBytes, flush: true);
+      await _validateDatabaseFile(staging, dbPassphrase);
+      await _cleanupSidecars(stagingPath);
+
+      for (final suffix in ['', '-wal', '-shm']) {
+        final currentPath = '$targetDbPath$suffix';
+        final current = File(currentPath);
+        if (await current.exists()) {
+          final previous = File('$previousPath$suffix');
+          await current.rename(previous.path);
+          previousFiles.add((current: current.path, previous: previous.path));
+        }
+      }
+
+      await staging.rename(targetDbPath);
+      installed = true;
+      await _validateDatabaseFile(File(targetDbPath), dbPassphrase);
+
+      for (final file in previousFiles) {
+        final old = File(file.previous);
+        if (await old.exists()) {
+          await old.delete();
+        }
+      }
+    } catch (_) {
+      if (installed) {
+        await _deleteDatabaseFiles(targetDbPath);
+      }
+      for (final file in previousFiles.reversed) {
+        final old = File(file.previous);
+        if (await old.exists()) {
+          await old.rename(file.current);
+        }
+      }
+      rethrow;
+    } finally {
+      if (!installed) {
+        await _deleteDatabaseFiles(stagingPath);
+      } else {
+        await _cleanupSidecars(stagingPath);
+      }
+    }
+  }
+
+  ({Uint8List salt, int iterations}) _validateManifest(
+    Map<String, dynamic> manifest,
+    Uint8List blob,
+  ) {
+    if (manifest['format'] != NkbContainer.formatName ||
+        manifest['format_version'] != NkbContainer.formatVersion ||
+        manifest['cipher'] != 'AES-256-GCM' ||
+        manifest['compression'] != 'none' ||
+        (manifest['payload'] is! Map ||
+            (manifest['payload'] as Map)['format'] != 'zip')) {
+      throw const BackupFormatException(
+        'Parameter manifest backup tidak didukung.',
+      );
+    }
+    final kdf = manifest['kdf'];
+    if (kdf is! Map ||
+        kdf['algorithm'] != BackupCrypto.kdfAlgo ||
+        kdf['bits'] != 256) {
+      throw const BackupFormatException('Parameter KDF backup tidak didukung.');
+    }
+    final iterations = _intField(kdf, 'iterations');
+    if (iterations == null ||
+        iterations < BackupCrypto.minIterations ||
+        iterations > BackupCrypto.maxIterations) {
+      throw const BackupFormatException(
+        'Jumlah iterasi KDF backup tidak valid.',
+      );
+    }
+    final salt = _decodeHexField(manifest, 'salt', BackupCrypto.saltBytes);
+    final nonce = _decodeHexField(manifest, 'nonce', BackupCrypto.nonceBytes);
+    if (blob.length < BackupCrypto.nonceBytes + 16) {
+      throw const BackupFormatException('Payload backup tidak lengkap.');
+    }
+    final payloadNonce = blob.sublist(0, BackupCrypto.nonceBytes);
+    for (var i = 0; i < nonce.length; i++) {
+      if (payloadNonce[i] != nonce[i]) {
+        throw const BackupFormatException(
+          'Nonce manifest tidak cocok dengan payload.',
+        );
+      }
+    }
+    return (salt: salt, iterations: iterations);
+  }
+
+  Uint8List _decodeHexField(Map<String, dynamic> map, String name, int bytes) {
+    final value = map[name];
+    if (value is! String ||
+        value.length != bytes * 2 ||
+        !RegExp(r'^[0-9a-fA-F]+$').hasMatch(value)) {
+      throw BackupFormatException('Field $name pada manifest tidak valid.');
+    }
+    return Uint8List.fromList(NkbBytes.unhex(value));
+  }
+
+  Future<void> _validateDatabaseFile(File file, String passphrase) async {
+    AppDatabase? probe;
+    try {
+      probe = AppDatabase(
+        openEncryptedExecutor(file: file, passphrase: passphrase),
+      );
+      final integrity = await probe
           .customSelect('PRAGMA integrity_check')
           .getSingle();
-      final ok = okRow.data.values.first?.toString() ?? '';
-      if (ok != 'ok') {
-        throw BackupFormatException('Integrity check gagal: $ok');
+      if (integrity.data.values.first?.toString() != 'ok') {
+        throw BackupFormatException(
+          'Integrity check gagal: ${integrity.data.values.first}',
+        );
       }
-      final tables = await probe
+      final rows = await probe
           .customSelect(
-            "SELECT count(*) AS c FROM sqlite_master WHERE type='table'",
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
           )
-          .getSingle();
-      if (((tables.data['c'] as int?) ?? 0) < 30) {
-        throw const BackupFormatException(
-          'Database hasil restore tidak lengkap.',
+          .get();
+      final names = rows.map((row) => row.data['name'] as String).toSet();
+      final missing = AppDatabase.requiredTableNames.difference(names);
+      if (missing.isNotEmpty) {
+        throw BackupFormatException(
+          'Database hasil restore tidak lengkap: $missing',
         );
       }
     } finally {
-      await probe.close();
+      await probe?.close();
     }
+  }
 
-    final target = File(targetDbPath);
-    final previous = File(
-      '$targetDbPath.previous-${DateTime.now().millisecondsSinceEpoch}',
-    );
-    var movedPrevious = false;
-    try {
-      if (await target.exists()) {
-        await target.rename(previous.path);
-        movedPrevious = true;
+  Future<void> _deleteDatabaseFiles(String basePath) async {
+    for (final suffix in ['', '-wal', '-shm']) {
+      final file = File('$basePath$suffix');
+      if (await file.exists()) {
+        await file.delete();
       }
-      await staging.rename(target.path);
-      if (movedPrevious && await previous.exists()) {
-        await previous.delete();
+    }
+  }
+
+  Future<void> _cleanupSidecars(String basePath) async {
+    for (final suffix in ['-wal', '-shm']) {
+      final file = File('$basePath$suffix');
+      if (await file.exists()) {
+        await file.delete();
       }
-    } catch (_) {
-      if (await staging.exists()) {
-        await staging.delete();
-      }
-      if (movedPrevious && !await target.exists() && await previous.exists()) {
-        await previous.rename(target.path);
-      }
-      rethrow;
     }
   }
 
   void _verifyChecksum(Uint8List blob, Map<String, dynamic> manifest) {
-    final expected = manifest['checksum_sha256']?.toString();
-    if (expected == null || expected != NkbContainer.sha256Hex(blob)) {
+    final expected = manifest['checksum_sha256'];
+    if (expected is! String || expected != NkbContainer.sha256Hex(blob)) {
       throw const BackupFormatException(
         'Checksum tidak cocok. File korup atau dimodifikasi.',
       );
     }
   }
 
+  int? _intField(Map<Object?, Object?> map, String name) {
+    final value = map[name];
+    return value is int
+        ? value
+        : value is num && value == value.toInt()
+        ? value.toInt()
+        : null;
+  }
+
+  bool _isHexKey(String value) =>
+      value.length == 64 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(value);
+
   Map<String, int> _intMap(Object? raw) {
     if (raw is Map) {
-      return raw.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
+      return raw.map((key, value) {
+        final number = value is num ? value.toInt() : 0;
+        return MapEntry(key.toString(), number);
+      });
     }
     return {};
   }

@@ -28,8 +28,7 @@ class NkbContainer {
   }
 
   static int readU32(Uint8List b, int offset) =>
-      ByteData.sublistView(b, offset, offset + 4)
-          .getUint32(0, Endian.little);
+      ByteData.sublistView(b, offset, offset + 4).getUint32(0, Endian.little);
 
   static String sha256Hex(List<int> bytes) =>
       crypto.sha256.convert(bytes).toString();
@@ -42,34 +41,32 @@ class NkbContainer {
     required String nonceHex,
     required int kdfIterations,
     required String checksumHex,
-  }) =>
-      {
-        'format': formatName,
-        'format_version': formatVersion,
-        'schema_version': schemaVersion,
-        'app_version': appVersion,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
-        'cipher': 'AES-256-GCM',
-        'kdf': {
-          'algorithm': 'PBKDF2-HMAC-SHA256',
-          'iterations': kdfIterations,
-          'bits': 256,
-        },
-        'salt': saltHex,
-        'nonce': nonceHex,
-        'checksum_sha256': checksumHex,
-        'compression': 'none',
-        'payload': {'format': 'zip'},
-        'record_counts': recordCounts,
-      };
+  }) => {
+    'format': formatName,
+    'format_version': formatVersion,
+    'schema_version': schemaVersion,
+    'app_version': appVersion,
+    'created_at': DateTime.now().toUtc().toIso8601String(),
+    'cipher': 'AES-256-GCM',
+    'kdf': {
+      'algorithm': 'PBKDF2-HMAC-SHA256',
+      'iterations': kdfIterations,
+      'bits': 256,
+    },
+    'salt': saltHex,
+    'nonce': nonceHex,
+    'checksum_sha256': checksumHex,
+    'compression': 'none',
+    'payload': {'format': 'zip'},
+    'record_counts': recordCounts,
+  };
 
   /// Serializes header + manifest + encrypted blob.
   static Uint8List serialize({
     required Map<String, dynamic> manifest,
     required Uint8List encryptedBlob,
   }) {
-    final manifestBytes =
-        Uint8List.fromList(utf8.encode(jsonEncode(manifest)));
+    final manifestBytes = Uint8List.fromList(utf8.encode(jsonEncode(manifest)));
     final out = BytesBuilder()
       ..add(magic)
       ..add(u32(manifestBytes.length))
@@ -81,7 +78,8 @@ class NkbContainer {
   /// Parses raw container into manifest + encrypted blob with structural
   /// validation only (no crypto).
   static ({Map<String, dynamic> manifest, Uint8List blob}) parseRaw(
-      Uint8List bytes) {
+    Uint8List bytes,
+  ) {
     if (bytes.length < 8 ||
         bytes[0] != magic[0] ||
         bytes[1] != magic[1] ||
@@ -93,13 +91,15 @@ class NkbContainer {
     if (manLen <= 0 || 8 + manLen >= bytes.length) {
       throw const BackupFormatException('Manifest rusak.');
     }
-    final manifestJson =
-        utf8.decode(bytes.sublist(8, 8 + manLen));
-    final manifest = jsonDecode(manifestJson) as Map<String, dynamic>;
+    final manifestJson = utf8.decode(bytes.sublist(8, 8 + manLen));
+    final decoded = jsonDecode(manifestJson);
+    if (decoded is! Map) {
+      throw const BackupFormatException('Manifest bukan objek JSON.');
+    }
+    final manifest = Map<String, dynamic>.from(decoded);
     final blob = Uint8List.fromList(bytes.sublist(8 + manLen));
     return (manifest: manifest, blob: blob);
   }
-
 }
 
 typedef RandomSource = List<int> Function(int byteCount);

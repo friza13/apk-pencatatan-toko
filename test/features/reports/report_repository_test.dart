@@ -226,6 +226,52 @@ void main() {
     expect(sum.profitMinor, 0);
   });
 
+  test('daily totals and outstanding due are net of return state', () async {
+    final customerId = await CustomerRepository(
+      db,
+    ).create(businessId: businessId, name: 'Kredit');
+    final sale = await SalesService(db).checkout(
+      CheckoutInput(
+        lines: [
+          SaleLineInput(
+            productId: barangId,
+            qtyMicro: 1000000,
+            unitPriceMinor: 12000,
+          ),
+        ],
+        accountId: kasId,
+        customerId: customerId,
+      ),
+    );
+    final line = (await db.select(db.saleLines).get()).single;
+    await SalesReturnService(db).createReturn(
+      SalesReturnInput(
+        saleId: sale.saleId,
+        lines: [
+          SalesReturnLineInput(saleLineId: line.id, qtyBaseMicro: 1000000),
+        ],
+        reason: 'retur kredit',
+      ),
+    );
+
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    final offset = BusinessClock.offsetMinutesFor('Asia/Jakarta');
+    final (s, e) = BusinessClock.dayRangeUtcMillis(now, offset);
+    final summary = await reports.salesSummary(
+      businessId: businessId,
+      startUtcMillis: s,
+      endUtcMillis: e,
+    );
+    final days = await reports.dailyTotals(
+      businessId: businessId,
+      days: 1,
+      offsetMinutes: offset,
+    );
+
+    expect(summary.totalMinor, 0);
+    expect(summary.dueMinor, 0);
+    expect(days.single.totalMinor, 0);
+  });
   test('stock valuation preserves fractional quantity', () async {
     await (db.update(db.products)..where((t) => t.id.equals(barangId))).write(
       const ProductsCompanion(stockQuantityMicro: Value(500000)),

@@ -75,43 +75,62 @@ class SalesReturnService {
         ),
       ])..where(_db.salesReturns.saleId.equals(input.saleId))).get();
       final returnedByLine = <int, int>{};
+      final returnedAmountByLine = <int, int>{};
       for (final row in existing) {
+        final returnDoc = row.readTable(_db.salesReturns);
+        if (returnDoc.voidedAt != null) continue;
         final line = row.readTable(_db.salesReturnLines);
         returnedByLine.update(
           line.saleLineId,
           (value) => value + line.qtyBaseMicro,
           ifAbsent: () => line.qtyBaseMicro,
         );
+        returnedAmountByLine.update(
+          line.saleLineId,
+          (value) => value + line.amountMinor,
+          ifAbsent: () => line.amountMinor,
+        );
       }
 
-      var total = 0;
-      final resolved = <({SaleLine line, int qty, int amount})>[];
+      final requestedByLine = <int, int>{};
       for (final request in input.lines) {
-        final line = byId[request.saleLineId];
-        if (line == null) {
-          throw const Failure(
-            code: ErrorCodes.saleCannotReturn,
-            message: 'Baris nota tidak ditemukan.',
-          );
-        }
         if (request.qtyBaseMicro <= 0) {
           throw const Failure(
             code: ErrorCodes.invalidQuantity,
             message: 'Jumlah retur tidak valid.',
           );
         }
+        requestedByLine.update(
+          request.saleLineId,
+          (value) => value + request.qtyBaseMicro,
+          ifAbsent: () => request.qtyBaseMicro,
+        );
+      }
+
+      var total = 0;
+      final resolved = <({SaleLine line, int qty, int amount})>[];
+      for (final entry in requestedByLine.entries) {
+        final line = byId[entry.key];
+        if (line == null) {
+          throw const Failure(
+            code: ErrorCodes.saleCannotReturn,
+            message: 'Baris nota tidak ditemukan.',
+          );
+        }
         final alreadyReturned = returnedByLine[line.id] ?? 0;
         final available = line.qtyBaseMicro - alreadyReturned;
-        if (request.qtyBaseMicro > available) {
+        if (entry.value > available) {
           throw const Failure(
             code: ErrorCodes.invalidQuantity,
             message: 'Jumlah retur melebihi jumlah terjual.',
           );
         }
-        final amount =
-            (line.lineTotalMinor * request.qtyBaseMicro) ~/ line.qtyBaseMicro;
+        final cumulativeQty = alreadyReturned + entry.value;
+        final cumulativeAmount =
+            (line.lineTotalMinor * cumulativeQty) ~/ line.qtyBaseMicro;
+        final amount = cumulativeAmount - (returnedAmountByLine[line.id] ?? 0);
         total += amount;
-        resolved.add((line: line, qty: request.qtyBaseMicro, amount: amount));
+        resolved.add((line: line, qty: entry.value, amount: amount));
       }
 
       final number =
@@ -152,16 +171,29 @@ class SalesReturnService {
                 note: Value('Retur nota ${sale.number ?? sale.id}'),
               ),
             );
-        final product = await (_db.select(
-          _db.products,
-        )..where((t) => t.id.equals(productId))).getSingle();
-        await (_db.update(
-          _db.products,
-        )..where((t) => t.id.equals(product.id))).write(
-          ProductsCompanion(
-            stockQuantityMicro: Value(product.stockQuantityMicro + item.qty),
-          ),
-        );
+        if (source.variantId != null) {
+          final variant = await (_db.select(
+            _db.productVariants,
+          )..where((t) => t.id.equals(source.variantId!))).getSingle();
+          await (_db.update(
+            _db.productVariants,
+          )..where((t) => t.id.equals(variant.id))).write(
+            ProductVariantsCompanion(
+              stockQuantityMicro: Value(variant.stockQuantityMicro + item.qty),
+            ),
+          );
+        } else {
+          final product = await (_db.select(
+            _db.products,
+          )..where((t) => t.id.equals(productId))).getSingle();
+          await (_db.update(
+            _db.products,
+          )..where((t) => t.id.equals(product.id))).write(
+            ProductsCompanion(
+              stockQuantityMicro: Value(product.stockQuantityMicro + item.qty),
+            ),
+          );
+        }
         await _db
             .into(_db.salesReturnLines)
             .insert(

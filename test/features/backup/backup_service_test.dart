@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:drift/native.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite3;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:notakit/database/app_database.dart';
 import 'package:notakit/features/backup/data/backup_service.dart';
@@ -100,6 +101,39 @@ void main() {
     }
   });
 
+  test('restore rejects incomplete schema and cleans staging', () async {
+    final incomplete = File('${tmp.path}/incomplete.db');
+    await db.customStatement('VACUUM INTO ?', [incomplete.path]);
+    final raw = sqlite3.sqlite3.open(incomplete.path);
+    try {
+      raw.execute('DROP TABLE marketplace_orders');
+    } finally {
+      raw.close();
+    }
+
+    final target = File('${tmp.path}/active.db');
+    await target.writeAsBytes([9, 8, 7]);
+    await expectLater(
+      service.applyRestore(
+        preview: RestorePreview(
+          createdAtIso: '',
+          schemaVersion: db.schemaVersion,
+          recordCounts: const {},
+          databaseBytes: await incomplete.readAsBytes(),
+          dbKeyHex: 'dd' * 32,
+        ),
+        targetDbPath: target.path,
+        dbPassphrase: '',
+      ),
+      throwsA(isA<BackupFormatException>()),
+    );
+    expect(await target.readAsBytes(), [9, 8, 7]);
+    final leftovers = tmp
+        .listSync()
+        .where((entry) => entry.path.contains('.restore-'))
+        .toList();
+    expect(leftovers, isEmpty);
+  });
   test('wrong password rejected at inspect', () async {
     final nkb = await service.createBackup(
       sourceDbPath: sourceDb.path,

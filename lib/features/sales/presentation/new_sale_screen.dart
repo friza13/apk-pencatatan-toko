@@ -62,9 +62,19 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
               .get()
           ..removeWhere((customer) => !customer.isActive);
     int? selectedCustomerId;
+    final service = await ref.read(salesServiceProvider.future);
+    final checkoutLines = [
+      for (final l in cart.lines)
+        SaleLineInput(
+          productId: l.productId,
+          qtyMicro: l.qtyMicro,
+          unitPriceMinor: l.unitPriceMinor,
+        ),
+    ];
+    int? resolvedTotal = await service.previewTotal(lines: checkoutLines);
 
     // Simple payment sheet: full-cash MVP with optional paid-amount edit.
-    final paidC = TextEditingController(text: '${cart.subtotalMinor}');
+    final paidC = TextEditingController(text: '$resolvedTotal');
     if (!mounted) return;
 
     final confirmed = await showModalBottomSheet<bool>(
@@ -87,7 +97,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Total: ${formatMinor(cart.subtotalMinor)}',
+                resolvedTotal == null
+                    ? 'Total: menghitung...'
+                    : 'Total: ${formatMinor(resolvedTotal!)}',
                 style: Theme.of(sheetContext).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -120,13 +132,33 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                         child: Text(customer.name),
                       ),
                   ],
-                  onChanged: (value) =>
-                      setSheetState(() => selectedCustomerId = value),
+                  onChanged: (value) async {
+                    selectedCustomerId = value;
+                    setSheetState(() => resolvedTotal = null);
+                    try {
+                      final total = await service.previewTotal(
+                        lines: checkoutLines,
+                        customerId: value,
+                      );
+                      if (!sheetContext.mounted) return;
+                      paidC.text = '$total';
+                      setSheetState(() => resolvedTotal = total);
+                    } on Failure catch (failure) {
+                      if (!sheetContext.mounted) return;
+                      setSheetState(() => resolvedTotal = cart.subtotalMinor);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(failure.message)));
+                    }
+                  },
                 ),
               ],
               const SizedBox(height: 16),
               FilledButton(
-                onPressed: () => Navigator.pop(sheetContext, true),
+                onPressed: resolvedTotal == null
+                    ? null
+                    : () => Navigator.pop(sheetContext, true),
                 child: const Text('Simpan Nota'),
               ),
             ],
@@ -143,14 +175,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
       final service = await ref.read(salesServiceProvider.future);
       final out = await service.checkout(
         CheckoutInput(
-          lines: [
-            for (final l in cart.lines)
-              SaleLineInput(
-                productId: l.productId,
-                qtyMicro: l.qtyMicro,
-                unitPriceMinor: l.unitPriceMinor,
-              ),
-          ],
+          lines: checkoutLines,
           accountId: accountId,
           customerId: selectedCustomerId,
           paidNowMinor: paidNow,

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:notakit/core/error/failures.dart';
@@ -81,6 +82,28 @@ void main() {
     unitPriceMinor: price,
   );
 
+  test('previewTotal resolves customer pricing before payment', () async {
+    await db
+        .into(db.customerPrices)
+        .insert(
+          CustomerPricesCompanion.insert(
+            customerId: customerId,
+            productId: barangId,
+            priceMinor: 10000,
+          ),
+        );
+
+    final cartTotal = await sales.previewTotal(
+      lines: [line(barangId, '1', 12000)],
+    );
+    final customerTotal = await sales.previewTotal(
+      lines: [line(barangId, '1', 12000)],
+      customerId: customerId,
+    );
+
+    expect(cartTotal, 12000);
+    expect(customerTotal, 10000);
+  });
   test('paid sale commits everything atomically', () async {
     final out = await sales.checkout(
       CheckoutInput(
@@ -229,6 +252,95 @@ void main() {
     },
   );
 
+  test(
+    'converted unit persists exact factor and integral base quantity',
+    () async {
+      final boxUnit = await db
+          .into(db.units)
+          .insert(
+            UnitsCompanion.insert(
+              businessId: businessId,
+              code: 'box',
+              name: 'Box',
+            ),
+          );
+      await db
+          .into(db.productUnits)
+          .insert(
+            ProductUnitsCompanion.insert(
+              productId: barangId,
+              unitId: boxUnit,
+              conversionToBaseMicro: 2500000,
+              salePriceOverrideMinor: const Value(30000),
+            ),
+          );
+
+      final out = await sales.checkout(
+        CheckoutInput(
+          lines: [
+            SaleLineInput(
+              productId: barangId,
+              unitId: boxUnit,
+              qtyMicro: 2000000,
+              unitPriceMinor: 30000,
+            ),
+          ],
+          accountId: cashAccountId,
+          paidNowMinor: 60000,
+        ),
+      );
+
+      final line = (await (db.select(
+        db.saleLines,
+      )..where((t) => t.saleId.equals(out.saleId))).getSingle());
+      expect(line.conversionFactorMicro, 2500000);
+      expect(line.qtyBaseMicro, 5000000);
+    },
+  );
+
+  test('non-integral unit conversion is rejected', () async {
+    final oddUnit = await db
+        .into(db.units)
+        .insert(
+          UnitsCompanion.insert(
+            businessId: businessId,
+            code: 'odd',
+            name: 'Odd',
+          ),
+        );
+    await db
+        .into(db.productUnits)
+        .insert(
+          ProductUnitsCompanion.insert(
+            productId: barangId,
+            unitId: oddUnit,
+            conversionToBaseMicro: 1000001,
+          ),
+        );
+
+    await expectLater(
+      sales.checkout(
+        CheckoutInput(
+          lines: [
+            SaleLineInput(
+              productId: barangId,
+              unitId: oddUnit,
+              qtyMicro: 1,
+              unitPriceMinor: 1,
+            ),
+          ],
+          accountId: cashAccountId,
+        ),
+      ),
+      throwsA(
+        isA<Failure>().having(
+          (f) => f.code,
+          'code',
+          ErrorCodes.invalidQuantity,
+        ),
+      ),
+    );
+  });
   test('invoice numbers increment across sales', () async {
     final a = await sales.checkout(
       CheckoutInput(

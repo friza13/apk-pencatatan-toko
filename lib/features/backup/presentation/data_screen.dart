@@ -85,8 +85,8 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       final db = await ref.read(appDatabaseProvider.future);
       final metadata = await AppMetadata.load(db);
       final file = await service.createBackup(
-        sourceDbPath: '$docs/notakit.db',
-        saveToPath: '$docs/notakit-${_stamp()}.nkb',
+        sourceDbPath: '${docs.path}\\notakit.db',
+        saveToPath: '${docs.path}\\notakit-${_stamp()}.nkb',
         password: password,
         schemaVersion: metadata.schemaVersion,
         appVersion: metadata.appVersion,
@@ -194,9 +194,12 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       final docs = await getDocsDir();
       await service.applyRestore(
         preview: preview,
-        targetDbPath: '$docs/notakit.db',
-        dbPassphrase: await readDbKeyHex(),
+        targetDbPath: '${docs.path}\\notakit.db',
+        dbPassphrase: preview.dbKeyHex,
       );
+
+      final secure = ref.read(secureStoreProvider);
+      await secure.write('nk.db.key', preview.dbKeyHex);
 
       // Buka ulang koneksi & muat ulang seluruh data.
       ref.invalidate(appDatabaseProvider);
@@ -275,7 +278,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 }
 
 // Helpers dipisah agar mudah di-mock pada widget test nanti.
-Future<dynamic> getDocsDir() async => getApplicationDocumentsDirectory();
+Future<Directory> getDocsDir() => getApplicationDocumentsDirectory();
 
 Future<String> readDbKeyHex() async {
   final store = FlutterSecureStoreAdapter(const FlutterSecureStorage());
