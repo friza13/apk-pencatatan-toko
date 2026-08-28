@@ -27,10 +27,12 @@ class _ReferencesScreenState extends ConsumerState<ReferencesScreen> {
             Tab(text: 'Satuan'),
           ]),
         ),
-        floatingActionButton: FloatingActionButton(
-          heroTag: 'fab-add-reference',
-          onPressed: () => _add(context),
-          child: const Icon(Icons.add),
+        floatingActionButton: Builder(
+          builder: (context) => FloatingActionButton(
+            heroTag: 'fab-add-reference',
+            onPressed: () => _add(context),
+            child: const Icon(Icons.add),
+          ),
         ),
         body: TabBarView(children: [
           // Kategori
