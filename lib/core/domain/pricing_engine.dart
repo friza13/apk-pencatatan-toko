@@ -83,8 +83,9 @@ abstract final class PricingEngine {
     required int standardPriceMinor,
     int? wholesalePriceMinor,
   }) {
-    final applicable =
-        candidates.where((c) => _isApplicable(c, request)).toList();
+    final applicable = candidates
+        .where((c) => _isApplicable(c, request))
+        .toList();
 
     // 1) Customer overrides — most specific min_qty, then newest start.
     final override = _pickBest(

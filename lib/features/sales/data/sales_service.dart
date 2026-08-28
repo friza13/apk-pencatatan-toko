@@ -157,11 +157,11 @@ class SalesService {
 
         final variant = line.variantId == null
             ? null
-            : await (_db.select(_db.productVariants)
-                  ..where((t) =>
-                      t.id.equals(line.variantId!) &
-                      t.productId.equals(p.id)))
-                .getSingleOrNull();
+            : await (_db.select(_db.productVariants)..where(
+                    (t) =>
+                        t.id.equals(line.variantId!) & t.productId.equals(p.id),
+                  ))
+                  .getSingleOrNull();
         if (line.variantId != null && variant == null) {
           throw const Failure(
             code: ErrorCodes.productNotFound,
@@ -171,10 +171,12 @@ class SalesService {
         final soldUnitId = line.unitId ?? p.baseUnitId;
         var conversionFactorMicro = quantityScale;
         if (soldUnitId != p.baseUnitId) {
-          final productUnit = await (_db.select(_db.productUnits)
-                ..where((t) =>
-                    t.productId.equals(p.id) & t.unitId.equals(soldUnitId)))
-              .getSingleOrNull();
+          final productUnit =
+              await (_db.select(_db.productUnits)..where(
+                    (t) =>
+                        t.productId.equals(p.id) & t.unitId.equals(soldUnitId),
+                  ))
+                  .getSingleOrNull();
           if (productUnit == null) {
             throw const Failure(
               code: ErrorCodes.invalidQuantity,
@@ -186,21 +188,25 @@ class SalesService {
         final customer = input.customerId == null
             ? null
             : await (_db.select(_db.customers)
-                  ..where((t) => t.id.equals(input.customerId!)))
-                .getSingleOrNull();
+                    ..where((t) => t.id.equals(input.customerId!)))
+                  .getSingleOrNull();
         final customerType = customer?.customerTypeId == null
             ? null
             : await (_db.select(_db.customerTypes)
-                  ..where((t) => t.id.equals(customer!.customerTypeId!)))
-                .getSingleOrNull();
+                    ..where((t) => t.id.equals(customer!.customerTypeId!)))
+                  .getSingleOrNull();
         final candidates = <PriceCandidate>[];
         if (customer != null) {
-          final rows = await (_db.select(_db.customerPrices)
-                ..where((t) =>
-                    t.customerId.equals(customer.id) &
-                    t.productId.equals(p.id)))
-              .get();
-          candidates.addAll(rows.map((row) => PriceCandidate(
+          final rows =
+              await (_db.select(_db.customerPrices)..where(
+                    (t) =>
+                        t.customerId.equals(customer.id) &
+                        t.productId.equals(p.id),
+                  ))
+                  .get();
+          candidates.addAll(
+            rows.map(
+              (row) => PriceCandidate(
                 priceMinor: row.priceMinor,
                 source: PriceSource.customerOverride,
                 variantId: row.variantId,
@@ -208,42 +214,49 @@ class SalesService {
                 minQtyMicro: row.minQtyMicro,
                 validFromMillis: row.validFrom.millisecondsSinceEpoch,
                 validToMillis: row.validTo?.millisecondsSinceEpoch,
-              )));
+              ),
+            ),
+          );
         }
-        final tierRows = await (_db.select(_db.productPrices)
-              ..where((t) => t.productId.equals(p.id)))
-            .get();
+        final tierRows = await (_db.select(
+          _db.productPrices,
+        )..where((t) => t.productId.equals(p.id))).get();
         for (final row in tierRows) {
           final tier = row.priceTierId == null
               ? null
               : await (_db.select(_db.priceTiers)
-                    ..where((t) => t.id.equals(row.priceTierId!)))
-                  .getSingleOrNull();
-          if (row.priceTierId != null && customerType?.defaultPriceTierId != row.priceTierId) {
+                      ..where((t) => t.id.equals(row.priceTierId!)))
+                    .getSingleOrNull();
+          if (row.priceTierId != null &&
+              customerType?.defaultPriceTierId != row.priceTierId) {
             continue;
           }
-          if (row.customerTypeId != null && customer?.customerTypeId != row.customerTypeId) {
+          if (row.customerTypeId != null &&
+              customer?.customerTypeId != row.customerTypeId) {
             continue;
           }
-          candidates.add(PriceCandidate(
-            priceMinor: row.priceMinor,
-            source: PriceSource.tierOrCustomerType,
-            variantId: row.variantId,
-            unitId: row.unitId,
-            minQtyMicro: row.minQtyMicro,
-            validFromMillis: row.validFrom.millisecondsSinceEpoch,
-            validToMillis: row.validTo?.millisecondsSinceEpoch,
-            tierPriority: tier?.priority ?? 100,
-          ));
+          candidates.add(
+            PriceCandidate(
+              priceMinor: row.priceMinor,
+              source: PriceSource.tierOrCustomerType,
+              variantId: row.variantId,
+              unitId: row.unitId,
+              minQtyMicro: row.minQtyMicro,
+              validFromMillis: row.validFrom.millisecondsSinceEpoch,
+              validToMillis: row.validTo?.millisecondsSinceEpoch,
+              tierPriority: tier?.priority ?? 100,
+            ),
+          );
         }
         final unitOverride = soldUnitId == p.baseUnitId
             ? null
-            : (await (_db.select(_db.productUnits)
-                    ..where((t) =>
-                        t.productId.equals(p.id) &
-                        t.unitId.equals(soldUnitId)))
-                .getSingle())
-              .salePriceOverrideMinor;
+            : (await (_db.select(_db.productUnits)..where(
+                        (t) =>
+                            t.productId.equals(p.id) &
+                            t.unitId.equals(soldUnitId),
+                      ))
+                      .getSingle())
+                  .salePriceOverrideMinor;
         final resolvedPrice = PricingEngine.resolve(
           request: PricingRequest(
             nowMillis: DateTime.now().toUtc().millisecondsSinceEpoch,
@@ -256,9 +269,8 @@ class SalesService {
             useWholesale: line.useWholesale,
           ),
           candidates: candidates,
-          standardPriceMinor: unitOverride ??
-              variant?.salePriceMinor ??
-              p.salePriceMinor,
+          standardPriceMinor:
+              unitOverride ?? variant?.salePriceMinor ?? p.salePriceMinor,
           wholesalePriceMinor: p.wholesalePriceMinor,
         );
         final unitPriceMinor = resolvedPrice.unitPriceMinor;

@@ -8,14 +8,13 @@ PriceCandidate _override({
   int? minQtyMicro,
   int? from,
   int? to,
-}) =>
-    PriceCandidate(
-      priceMinor: price,
-      source: PriceSource.customerOverride,
-      minQtyMicro: minQtyMicro,
-      validFromMillis: from,
-      validToMillis: to,
-    );
+}) => PriceCandidate(
+  priceMinor: price,
+  source: PriceSource.customerOverride,
+  minQtyMicro: minQtyMicro,
+  validFromMillis: from,
+  validToMillis: to,
+);
 
 PricingRequest _request({int qtyMicro = 1000000, bool wholesale = false}) {
   return PricingRequest(
@@ -176,7 +175,5 @@ void main() {
       );
       expect(r.unitPriceMinor, 8000);
     });
-
-
   });
 }
