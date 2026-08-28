@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 
+import '../../../core/units/quantity.dart';
 import '../../../database/app_database.dart';
 import '../data/receipt_pdf.dart';
 import '../data/receipt_text_renderer.dart';
@@ -45,7 +46,7 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
         for (final l in widget.lines)
           ReceiptLine(
             name: l.productNameSnapshot,
-            qty: l.qtyBaseMicro.toString(),
+            qty: microToDecimalString(l.qtyBaseMicro),
             priceMinor: l.unitPriceMinor,
             totalMinor: l.lineTotalMinor,
           ),

@@ -202,10 +202,17 @@ class SaleDetailScreen extends ConsumerWidget {
                       SizedBox(
                         width: 90,
                         child: TextField(
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           decoration: const InputDecoration(labelText: 'Qty'),
-                          onChanged: (value) => quantities[line.id] =
-                              (int.tryParse(value) ?? 0) * quantityScale,
+                          onChanged: (value) {
+                            try {
+                              quantities[line.id] = toMicro(value.trim());
+                            } catch (_) {
+                              quantities[line.id] = 0;
+                            }
+                          },
                         ),
                       ),
                     ],
