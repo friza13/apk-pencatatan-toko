@@ -26,6 +26,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   final _salePrice = TextEditingController();
   final _wholesalePrice = TextEditingController();
   final _minStock = TextEditingController();
+  final _initialStock = TextEditingController();
 
   int? _categoryId;
   String _type = 'goods';
@@ -34,8 +35,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   /// Conversion rows for non-base units: unitId -> factor text.
   final Map<int, TextEditingController> _unitFactors = {};
 
-  /// Variant rows: (name, price) controllers.
-  final List<(TextEditingController, TextEditingController)> _variants = [];
+  /// Variant rows: (name, price, initialStock) controllers.
+  final List<
+    (TextEditingController, TextEditingController, TextEditingController)
+  >
+  _variants = [];
 
   bool _loadingExisting = true;
   bool _saving = false;
@@ -78,6 +82,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             TextEditingController(
               text: v.salePriceMinor == 0 ? '' : '${v.salePriceMinor}',
             ),
+            TextEditingController(
+              text: microToDecimalString(v.stockQuantityMicro),
+            ),
           ));
         }
       }
@@ -97,15 +104,17 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       _salePrice,
       _wholesalePrice,
       _minStock,
+      _initialStock,
     ]) {
       c.dispose();
     }
     for (final c in _unitFactors.values) {
       c.dispose();
     }
-    for (final (n, p) in _variants) {
+    for (final (n, p, s) in _variants) {
       n.dispose();
       p.dispose();
+      s.dispose();
     }
     super.dispose();
   }
@@ -138,6 +147,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
     try {
       final business = await ref.read(currentBusinessProvider.future);
+      int initialStockMicro = 0;
+      if (widget.productId == null && _trackStock && _type == 'goods') {
+        final text = _initialStock.text.trim();
+        if (text.isNotEmpty) {
+          initialStockMicro = toMicro(text);
+        }
+      }
+
       final draft = ProductDraft(
         businessId: business.id,
         name: _name.text.trim(),
@@ -152,6 +169,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         minStockMicro: toMicro(
           _minStock.text.trim().isEmpty ? '0' : _minStock.text.trim(),
         ),
+        initialStockMicro: initialStockMicro,
         trackStock: _trackStock && _type == 'goods',
       );
 
@@ -166,11 +184,22 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       }
 
       // Variants (skip empty names).
-      for (final (n, p) in _variants) {
+      for (final (n, p, s) in _variants) {
         final name = n.text.trim();
         if (name.isEmpty) continue;
+        int variantInitialStock = 0;
+        if (widget.productId == null && _trackStock && _type == 'goods') {
+          final sText = s.text.trim();
+          if (sText.isNotEmpty) {
+            variantInitialStock = toMicro(sText);
+          }
+        }
         draft.variants.add(
-          VariantInput(name: name, salePriceMinor: _parseMoney(p.text)),
+          VariantInput(
+            name: name,
+            salePriceMinor: _parseMoney(p.text),
+            initialStockMicro: variantInitialStock,
+          ),
         );
       }
 
@@ -302,6 +331,19 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       : (v) => setState(() => _trackStock = v),
                 ),
                 if (_trackStock && _type == 'goods') ...[
+                  if (widget.productId == null) ...[
+                    TextField(
+                      controller: _initialStock,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Stok awal',
+                        helperText: 'Jumlah stok fisik saat ini (opsional).',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
                     controller: _minStock,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -311,11 +353,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                       labelText: 'Batas stok minimum',
                       helperText: 'Contoh: 5 (pcs). Untuk notifikasi menipis.',
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Jumlah stok diisi lewat menu Stok (stok awal / penyesuaian).',
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -355,37 +392,61 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   ),
                   children: [
                     for (var i = 0; i < _variants.length; i++)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _variants[i].$1,
-                              decoration: const InputDecoration(
-                                labelText: 'Nama varian',
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: TextField(
+                                controller: _variants[i].$1,
+                                decoration: const InputDecoration(
+                                  labelText: 'Nama varian',
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _variants[i].$2,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Harga jual',
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 2,
+                              child: TextField(
+                                controller: _variants[i].$2,
+                                keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(
+                                  labelText: 'Harga jual',
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () =>
-                                setState(() => _variants.removeAt(i)),
-                          ),
-                        ],
+                            if (widget.productId == null &&
+                                _trackStock &&
+                                _type == 'goods') ...[
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: _variants[i].$3,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Stok awal',
+                                  ),
+                                ),
+                              ),
+                            ],
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () =>
+                                  setState(() => _variants.removeAt(i)),
+                            ),
+                          ],
+                        ),
                       ),
                     TextButton.icon(
                       onPressed: () {
                         setState(() {
                           _variants.add((
+                            TextEditingController(),
                             TextEditingController(),
                             TextEditingController(),
                           ));
