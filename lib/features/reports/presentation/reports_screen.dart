@@ -115,7 +115,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     if (d.totalMinor > maxVal) maxVal = d.totalMinor;
                   }
                   return SizedBox(
-                    height: 120,
+                    height: 132,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
