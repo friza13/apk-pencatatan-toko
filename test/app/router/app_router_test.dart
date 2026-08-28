@@ -41,19 +41,20 @@ Future<ProviderContainer> _pumpUnlockedApp(WidgetTester tester) async {
   final secure = InMemorySecureStore();
   final biometric = NoBiometric();
 
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWith((ref) async => db),
-    secureStoreProvider.overrideWithValue(secure),
-    biometricAuthProvider.overrideWithValue(biometric),
-    pinHasherProvider.overrideWith((ref) => const PinHasher(iterations: 1000)),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWith((ref) async => db),
+      secureStoreProvider.overrideWithValue(secure),
+      biometricAuthProvider.overrideWithValue(biometric),
+      pinHasherProvider.overrideWith(
+        (ref) => const PinHasher(iterations: 1000),
+      ),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
-    UncontrolledProviderScope(
-      container: container,
-      child: const NotaKitApp(),
-    ),
+    UncontrolledProviderScope(container: container, child: const NotaKitApp()),
   );
   await tester.pumpAndSettle();
 
@@ -69,8 +70,9 @@ Future<ProviderContainer> _pumpUnlockedApp(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('unlocked app shows Beranda with 5-tab bottom navigation',
-      (tester) async {
+  testWidgets('unlocked app shows Beranda with 5-tab bottom navigation', (
+    tester,
+  ) async {
     await _pumpUnlockedApp(tester);
 
     expect(find.text('Beranda'), findsAtLeastNWidgets(1));
@@ -91,5 +93,17 @@ void main() {
     );
     expect(router.routerDelegate.currentConfiguration.uri.path, '/products');
     addTearDown(container.dispose);
+  });
+
+  testWidgets('bottom navigation opens the real reports screen', (
+    tester,
+  ) async {
+    await _pumpUnlockedApp(tester);
+
+    await tester.tap(find.text('Laporan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Omzet'), findsOneWidget);
+    expect(find.text('Laporan akan hadir di sini.'), findsNothing);
   });
 }

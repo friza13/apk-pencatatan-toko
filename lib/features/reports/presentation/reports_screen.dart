@@ -40,8 +40,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           final business = businessAsync.value;
           if (business == null) return const SizedBox.shrink();
 
-          final offset =
-              BusinessClock.offsetMinutesFor(business.timezone);
+          final offset = BusinessClock.offsetMinutesFor(business.timezone);
           final (s, e) = repo.rangeFor(_period, offset);
 
           return ListView(
@@ -73,28 +72,35 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               const SizedBox(height: 12),
               FutureBuilder<SalesSummary>(
                 future: repo.salesSummary(
-                    businessId: business.id,
-                    startUtcMillis: s,
-                    endUtcMillis: e),
+                  businessId: business.id,
+                  startUtcMillis: s,
+                  endUtcMillis: e,
+                ),
                 builder: (context, snap) {
                   final sum = snap.data;
                   if (sum == null) {
-                    return const Center(
-                        child: CircularProgressIndicator());
+                    return const Center(child: CircularProgressIndicator());
                   }
-                  return Column(children: [
-                    _row(context, 'Omzet', formatMinor(sum.totalMinor)),
-                    _row(context, 'Laba kotor', formatMinor(sum.profitMinor)),
-                    _row(context, 'Transaksi', '${sum.transactionCount}'),
-                    if (sum.dueMinor > 0)
-                      _row(context, 'Piutang baru',
-                          formatMinor(sum.dueMinor)),
-                  ]);
+                  return Column(
+                    children: [
+                      _row(context, 'Omzet', formatMinor(sum.totalMinor)),
+                      _row(context, 'Laba kotor', formatMinor(sum.profitMinor)),
+                      _row(context, 'Transaksi', '${sum.transactionCount}'),
+                      if (sum.dueMinor > 0)
+                        _row(
+                          context,
+                          'Piutang baru',
+                          formatMinor(sum.dueMinor),
+                        ),
+                    ],
+                  );
                 },
               ),
               const SizedBox(height: 20),
-              Text('Penjualan 7 hari terakhir',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Penjualan 7 hari terakhir',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               FutureBuilder(
                 future: repo.dailyTotals(
@@ -116,25 +122,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         for (final d in data)
                           Expanded(
                             child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 3,
+                              ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   Container(
-                                    height: 4 +
-                                        100 * (d.totalMinor / maxVal),
+                                    height: 4 + 100 * (d.totalMinor / maxVal),
                                     decoration: BoxDecoration(
                                       color: theme.colorScheme.primary
                                           .withValues(alpha: .8),
-                                      borderRadius:
-                                          BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    DateFormat('E', 'id_ID')
-                                        .format(d.dayLocalStartUtc),
+                                    DateFormat('E').format(d.dayLocalStartUtc),
                                     style: theme.textTheme.labelSmall,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -152,31 +156,37 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               const SizedBox(height: 4),
               FutureBuilder<List<TopProductRow>>(
                 future: repo.topProducts(
-                    businessId: business.id,
-                    startUtcMillis: s,
-                    endUtcMillis: e),
+                  businessId: business.id,
+                  startUtcMillis: s,
+                  endUtcMillis: e,
+                ),
                 builder: (context, snap) {
                   final top = snap.data ?? const <TopProductRow>[];
                   if (top.isEmpty) {
-                    return Text('Belum ada data pada periode ini.',
-                        style: theme.textTheme.bodySmall);
+                    return Text(
+                      'Belum ada data pada periode ini.',
+                      style: theme.textTheme.bodySmall,
+                    );
                   }
-                  return Column(children: [
-                    for (var i = 0; i < top.length; i++)
-                      ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          radius: 12,
-                          backgroundColor:
-                              theme.colorScheme.primaryContainer,
-                          child:
-                              Text('${i + 1}', style: theme.textTheme.labelSmall),
+                  return Column(
+                    children: [
+                      for (var i = 0; i < top.length; i++)
+                        ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            radius: 12,
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            child: Text(
+                              '${i + 1}',
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ),
+                          title: Text(top[i].name),
+                          trailing: Text(formatMinor(top[i].totalMinor)),
                         ),
-                        title: Text(top[i].name),
-                        trailing: Text(formatMinor(top[i].totalMinor)),
-                      ),
-                  ]);
+                    ],
+                  );
                 },
               ),
               const SizedBox(height: 20),
@@ -187,16 +197,17 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     leading: const Icon(Icons.savings_outlined),
                     title: const Text('Nilai stok'),
                     subtitle: const Text('Stok saat ini x harga modal'),
-                    trailing: Text(formatMinor(snap.data ?? 0),
-                        style: theme.textTheme.titleMedium),
+                    trailing: Text(
+                      formatMinor(snap.data ?? 0),
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 icon: const Icon(Icons.ios_share),
-                label:
-                    const Text('Export CSV (omzet harian 30 hari)'),
+                label: const Text('Export CSV (omzet harian 30 hari)'),
                 onPressed: () =>
                     _exportCsv(context, ref, repo, business.id, offset),
               ),
@@ -207,8 +218,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
-  Future<void> _exportCsv(BuildContext context, WidgetRef ref,
-      ReportRepository repo, int businessId, int offsetMinutes) async {
+  Future<void> _exportCsv(
+    BuildContext context,
+    WidgetRef ref,
+    ReportRepository repo,
+    int businessId,
+    int offsetMinutes,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     final rows = await repo.dailyTotals(
       businessId: businessId,
@@ -234,10 +250,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   Widget _row(BuildContext context, String label, String value) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [Text(label), Text(value)],
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [Text(label), Text(value)],
+    ),
+  );
 }

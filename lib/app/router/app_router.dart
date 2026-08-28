@@ -12,7 +12,7 @@ import '../../features/customers/presentation/simple_party_screen.dart';
 import '../../features/products/presentation/product_detail_screen.dart';
 import '../../features/products/presentation/product_form_screen.dart';
 import '../../features/products/presentation/products_screen.dart';
-import '../../features/reports/reports_screen.dart';
+import '../../features/reports/presentation/reports_screen.dart';
 import '../../features/sales/presentation/new_sale_screen.dart';
 import '../../features/sales/presentation/sale_detail_screen.dart';
 import '../../features/sales/presentation/sales_screen.dart';
@@ -34,112 +34,122 @@ final GoRouter appRouter = GoRouter(
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => _AppShell(shell: shell),
       branches: [
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: AppRoutes.home,
-            builder: (context, state) => const DashboardScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/sales',
-            builder: (context, state) => const SalesScreen(),
-            routes: [
-              GoRoute(
-                path: 'new',
-                builder: (context, state) => const NewSaleScreen(),
-              ),
-              GoRoute(
-                path: ':id',
-                builder: (context, state) => SaleDetailScreen(
-                  saleId: int.parse(state.pathParameters['id']!),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.home,
+              builder: (context, state) => const DashboardScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/sales',
+              builder: (context, state) => const SalesScreen(),
+              routes: [
+                GoRoute(
+                  path: 'new',
+                  builder: (context, state) => const NewSaleScreen(),
                 ),
-              ),
-            ],
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/products',
-            builder: (context, state) => const ProductsScreen(),
-            routes: [
-              GoRoute(
-                path: 'new',
-                builder: (context, state) => const ProductFormScreen(),
-              ),
-              GoRoute(
-                path: ':id',
-                builder: (context, state) => ProductDetailScreen(
-                  productId: int.parse(state.pathParameters['id']!),
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) => SaleDetailScreen(
+                    saleId: int.parse(state.pathParameters['id']!),
+                  ),
                 ),
-                routes: [
-                  GoRoute(
-                    path: 'edit',
-                    builder: (context, state) => ProductFormScreen(
-                      productId: int.parse(state.pathParameters['id']!),
-                    ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/products',
+              builder: (context, state) => const ProductsScreen(),
+              routes: [
+                GoRoute(
+                  path: 'new',
+                  builder: (context, state) => const ProductFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) => ProductDetailScreen(
+                    productId: int.parse(state.pathParameters['id']!),
                   ),
-                ],
-              ),
-            ],
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/reports',
-            builder: (context, state) => const ReportsScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/more',
-            builder: (context, state) => const MoreMenuScreen(),
-            routes: [
-              GoRoute(
-                path: 'customers',
-                builder: (context, state) => const CustomersScreen(),
-              ),
-              GoRoute(
-                path: 'suppliers',
-                builder: (context, state) =>
-                    const SimplePartyScreen(isSupplier: true),
-              ),
-              GoRoute(
-                path: 'salesmen',
-                builder: (context, state) =>
-                    const SimplePartyScreen(isSupplier: false),
-              ),
-              GoRoute(
-                path: 'data',
-                builder: (context, state) => const DataScreen(),
-              ),
-              GoRoute(
-                path: 'piutang',
-                builder: (context, state) => const ReceivablesScreen(),
-              ),
-              GoRoute(
-                path: 'kas',
-                builder: (context, state) => const FinanceScreen(),
-              ),
-              GoRoute(
-                path: 'stock',
-                builder: (context, state) => const StockScreen(),
-                routes: [
-                  GoRoute(
-                    path: ':id',
-                    builder: (context, state) => StockCardScreen(
-                      productId: int.parse(state.pathParameters['id']!),
+                  routes: [
+                    GoRoute(
+                      path: 'edit',
+                      builder: (context, state) => ProductFormScreen(
+                        productId: int.parse(state.pathParameters['id']!),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              GoRoute(
-                path: 'references',
-                builder: (context, state) => const ReferencesScreen(),
-              ),
-            ],
-          ),
-        ]),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/reports',
+              builder: (context, state) => const ReportsScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/more',
+              builder: (context, state) => const MoreMenuScreen(),
+              routes: [
+                GoRoute(
+                  path: 'customers',
+                  builder: (context, state) => const CustomersScreen(),
+                ),
+                GoRoute(
+                  path: 'suppliers',
+                  builder: (context, state) =>
+                      const SimplePartyScreen(isSupplier: true),
+                ),
+                GoRoute(
+                  path: 'salesmen',
+                  builder: (context, state) =>
+                      const SimplePartyScreen(isSupplier: false),
+                ),
+                GoRoute(
+                  path: 'data',
+                  builder: (context, state) => const DataScreen(),
+                ),
+                GoRoute(
+                  path: 'piutang',
+                  builder: (context, state) => const ReceivablesScreen(),
+                ),
+                GoRoute(
+                  path: 'kas',
+                  builder: (context, state) => const FinanceScreen(),
+                ),
+                GoRoute(
+                  path: 'stock',
+                  builder: (context, state) => const StockScreen(),
+                  routes: [
+                    GoRoute(
+                      path: ':id',
+                      builder: (context, state) => StockCardScreen(
+                        productId: int.parse(state.pathParameters['id']!),
+                      ),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'references',
+                  builder: (context, state) => const ReferencesScreen(),
+                ),
+              ],
+            ),
+          ],
+        ),
       ],
     ),
   ],
@@ -156,10 +166,8 @@ class _AppShell extends StatelessWidget {
       body: shell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
-        onDestinationSelected: (index) => shell.goBranch(
-          index,
-          initialLocation: index == shell.currentIndex,
-        ),
+        onDestinationSelected: (index) =>
+            shell.goBranch(index, initialLocation: index == shell.currentIndex),
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),

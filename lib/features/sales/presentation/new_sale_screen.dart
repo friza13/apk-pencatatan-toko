@@ -181,8 +181,10 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
           paidNowMinor: paidNow,
         ),
       );
-      ref.read(cartProvider.notifier).clear();
-      ref.invalidate(productsControllerProvider);
+      ref
+        ..read(cartProvider.notifier).clear()
+        ..invalidate(productsControllerProvider)
+        ..invalidate(salesListProvider);
       if (!mounted) return;
       await showDialog<void>(
         context: context,
@@ -194,13 +196,13 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
           ),
           actions: [
             FilledButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('OK'),
             ),
           ],
         ),
       );
-      if (mounted && context.canPop()) context.pop();
+      if (mounted) context.go('/sales');
     } on Failure catch (f) {
       if (!mounted) return;
       ScaffoldMessenger.of(
