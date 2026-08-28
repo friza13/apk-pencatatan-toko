@@ -28,6 +28,18 @@
 - Setiap checkpoint: `flutter analyze`, `flutter test`, `flutter build apk --debug` (jika relevan), commit lokal (tanpa push).
 - UI mengikuti `DESAIN.md` (Indigo #2563EB, Inter, spacing 4pt, bottom nav 5 tab, komponen NK*).
 
+## Recovery stabilization status (2026-08-28)
+
+- M1 return/refund atomic: selesai di branch `mvp-stabilization`, commit
+  `b092672`.
+- M2 pricing, variant, unit conversion, dan customer pricing checkout: selesai,
+  commit `3b6a0a4`.
+- M3 backup metadata runtime dan M4 customer selection UX: selesai,
+  commit `a9c4f22`.
+- `flutter analyze` dan `flutter test`: **PASS VERIFIED NOW** pada worktree.
+- Android integration/debug build pasca-commit terakhir masih menjadi langkah
+  release verification berikutnya; Phase 2 belum dimulai.
+
 ## Roadmap Fase
 
 | Fase | Isi | Status |

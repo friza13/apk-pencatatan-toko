@@ -6,6 +6,31 @@
 
 ---
 
+## D-025 — Checkout menggunakan pricing snapshot ter-resolve
+
+**Context:** Model pricing, variant, dan unit sudah ada, tetapi checkout masih
+memakai harga cart tanpa resolusi service-side.
+
+**Decision:** Checkout menyelesaikan customer override, tier/type, quantity
+break, validity, wholesale, variant, dan unit conversion di dalam transaksi.
+Harga, unit, quantity base, serta cost disalin sebagai snapshot ke sale line.
+
+**Reason:** Mencegah harga dari UI menjadi sumber kebenaran dan menjaga
+historical transaction tetap stabil saat master data berubah.
+
+**Trade-offs:** Resolusi menambah query saat checkout; optimisasi batching dapat
+ditangani setelah correctness MVP terbukti.
+
+## D-026 — Customer wajib tersedia untuk saldo tertunda
+
+**Context:** Checkout mendukung pembayaran parsial/kredit, tetapi UI belum
+menyediakan pemilik piutang.
+
+**Decision:** Payment sheet menampilkan customer aktif dan meneruskan pilihan ke
+`CheckoutInput`; service tetap menolak due balance tanpa customer.
+
+**Reason:** Menjaga invariant bahwa setiap receivable memiliki owner.
+
 ## D-001 — Scope: MVP dulu, Phase 2/3 ditunda
 
 **Context:** PRD memuat fitur sangat luas (restoran, minimarket lanjutan, marketplace). Implementasi semua sekaligus berisiko tinggi.

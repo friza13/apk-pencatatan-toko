@@ -254,3 +254,24 @@ financial reversal ditutup dengan guard eksplisit, bukan dengan klaim bahwa
 refund sudah tersedia. Recovery gate teknis MVP lulus, tetapi MVP belum boleh
 dianggap feature-complete atau masuk Phase 2 sebelum sisa P1 dan keputusan
 return/refund ditangani.
+
+## Recovery re-audit — 2026-08-28
+
+M1 return/refund atomic sekarang memakai tabel return yang sudah tersedia,
+movement `sales_return_in`, payment refund, ledger, account balance, receivable,
+audit log, dan rollback dalam satu transaksi. Laporan sales, profit, dan top
+products mengurangi return; valuasi stok memakai micro-unit precision.
+
+M2 pricing sudah terhubung ke checkout: variant, unit conversion, customer
+override, customer type/tier, quantity break, validity window, wholesale, dan
+historical price/cost snapshot. Kandidat pricing yang berbeda unit atau variant
+tidak lagi bocor ke line lain.
+
+M3/M4: metadata backup mengambil schema version dari database runtime, flow
+checkout menyediakan pemilihan customer untuk piutang, dan seluruh unit test
+serta analyzer diverifikasi ulang pada worktree `mvp-stabilization`.
+
+Status: **PASS VERIFIED NOW** untuk analyzer dan full test suite pada worktree.
+Android integration return UI dan debug APK pasca-perubahan terakhir belum
+diverifikasi ulang; karenanya release readiness tetap **conditional**, bukan
+klaim bebas bug.
