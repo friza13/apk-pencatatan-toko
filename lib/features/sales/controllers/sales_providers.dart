@@ -52,16 +52,60 @@ class CartLine {
     required this.name,
     required this.qtyMicro,
     required this.unitPriceMinor,
+    this.variantId,
+    this.variantName,
+    this.unitId,
+    this.unitName,
+    this.conversionFactorMicro = 1000000,
     this.tracked = true,
     this.currentStockMicro = 0,
   });
 
   final int productId;
   final String name;
+  final int? variantId;
+  final String? variantName;
+  final int? unitId;
+  final String? unitName;
+  final int conversionFactorMicro;
   int qtyMicro;
   int unitPriceMinor;
   bool tracked;
   int currentStockMicro;
+
+  String get cartKey => '${productId}_${variantId ?? 0}_${unitId ?? 0}';
+
+  String get displayName {
+    final buffer = StringBuffer(name);
+    if (variantName != null && variantName!.isNotEmpty) {
+      buffer.write(' ($variantName)');
+    }
+    if (unitName != null && unitName!.isNotEmpty) {
+      buffer.write(' [$unitName]');
+    }
+    return buffer.toString();
+  }
+
+  CartLine copyWith({
+    int? qtyMicro,
+    int? unitPriceMinor,
+    bool? tracked,
+    int? currentStockMicro,
+  }) {
+    return CartLine(
+      productId: productId,
+      name: name,
+      qtyMicro: qtyMicro ?? this.qtyMicro,
+      unitPriceMinor: unitPriceMinor ?? this.unitPriceMinor,
+      variantId: variantId,
+      variantName: variantName,
+      unitId: unitId,
+      unitName: unitName,
+      conversionFactorMicro: conversionFactorMicro,
+      tracked: tracked ?? this.tracked,
+      currentStockMicro: currentStockMicro ?? this.currentStockMicro,
+    );
+  }
 
   int get lineTotalMinor => divideHalfUpRound(qtyMicro * unitPriceMinor);
 }
@@ -83,61 +127,86 @@ class CartController extends Notifier<CartState> {
   CartState build() => const CartState();
 
   void add(Product p) {
-    final existing = state.lines.where((l) => l.productId == p.id).toList();
-    if (existing.isNotEmpty) {
-      _changeQty(p.id, existing.first.qtyMicro + 1000000);
+    addVariantOrUnit(product: p);
+  }
+
+  void addVariantOrUnit({
+    required Product product,
+    int? variantId,
+    String? variantName,
+    int? unitPriceMinor,
+    int? unitId,
+    String? unitName,
+    int? conversionFactorMicro,
+    int? currentStockMicro,
+  }) {
+    final key = '${product.id}_${variantId ?? 0}_${unitId ?? 0}';
+    final existing = state.lines.where((l) => l.cartKey == key).firstOrNull;
+    if (existing != null) {
+      _changeQtyByKey(key, existing.qtyMicro + 1000000);
       return;
     }
+
     state = CartState(
       lines: [
         ...state.lines,
         CartLine(
-          productId: p.id,
-          name: p.name,
+          productId: product.id,
+          name: product.name,
           qtyMicro: 1000000,
-          unitPriceMinor: p.salePriceMinor,
-          tracked: p.trackStock && p.type == 'goods',
-          currentStockMicro: p.stockQuantityMicro,
+          unitPriceMinor: unitPriceMinor ?? product.salePriceMinor,
+          variantId: variantId,
+          variantName: variantName,
+          unitId: unitId,
+          unitName: unitName,
+          conversionFactorMicro: conversionFactorMicro ?? 1000000,
+          tracked: product.trackStock && product.type == 'goods',
+          currentStockMicro: currentStockMicro ?? product.stockQuantityMicro,
         ),
       ],
     );
   }
 
-  void _changeQty(int productId, int newQtyMicro) {
+  void _changeQtyByKey(String key, int newQtyMicro) {
     if (newQtyMicro <= 0) {
       state = CartState(
-        lines: state.lines.where((l) => l.productId != productId).toList(),
+        lines: state.lines.where((l) => l.cartKey != key).toList(),
       );
       return;
     }
     state = CartState(
       lines: [
         for (final l in state.lines)
-          if (l.productId == productId)
-            CartLine(
-              productId: l.productId,
-              name: l.name,
-              qtyMicro: newQtyMicro,
-              unitPriceMinor: l.unitPriceMinor,
-              tracked: l.tracked,
-              currentStockMicro: l.currentStockMicro,
-            )
+          if (l.cartKey == key)
+            l.copyWith(qtyMicro: newQtyMicro)
           else
             l,
       ],
     );
   }
 
+  void incrementByKey(String key) {
+    final line = state.lines.where((l) => l.cartKey == key).firstOrNull;
+    if (line == null) return;
+    _changeQtyByKey(key, line.qtyMicro + 1000000);
+  }
+
+  void decrementByKey(String key) {
+    final line = state.lines.where((l) => l.cartKey == key).firstOrNull;
+    if (line == null) return;
+    _changeQtyByKey(key, line.qtyMicro - 1000000);
+  }
+
   void increment(int productId) {
     final line = state.lines.where((l) => l.productId == productId).firstOrNull;
     if (line == null) return;
-    _changeQty(productId, line.qtyMicro + 1000000);
+    incrementByKey(line.cartKey);
   }
 
   void decrement(int productId) {
     final line = state.lines.where((l) => l.productId == productId).firstOrNull;
     if (line == null) return;
-    _changeQty(productId, line.qtyMicro - 1000000);
+    decrementByKey(line.cartKey);
   }
 
   void clear() => state = const CartState();

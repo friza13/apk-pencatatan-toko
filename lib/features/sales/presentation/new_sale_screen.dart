@@ -48,6 +48,147 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     });
   }
 
+  Future<void> _onSelectProduct(Product p) async {
+    final repo = await ref.read(productRepositoryProvider.future);
+    final detail = await repo.detail(p.id);
+    if (!mounted) return;
+
+    final variants = detail?.variants ?? [];
+    final units = detail?.units ?? [];
+
+    if (variants.isEmpty && units.isEmpty) {
+      ref.read(cartProvider.notifier).add(p);
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pilih Varian / Satuan',
+                      style: Theme.of(sheetCtx).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      p.name,
+                      style: Theme.of(sheetCtx).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(sheetCtx).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.inventory_2_outlined),
+                      title: Text(p.name),
+                      subtitle: Text(
+                        'Harga: ${formatMinor(p.salePriceMinor)}'
+                        '${p.trackStock ? ' • Stok: ${microToDecimalString(p.stockQuantityMicro)}' : ''}',
+                      ),
+                      onTap: () {
+                        ref.read(cartProvider.notifier).add(p);
+                        Navigator.pop(sheetCtx);
+                      },
+                    ),
+                    if (variants.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Text(
+                          'Varian',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      for (final v in variants)
+                        ListTile(
+                          leading: const Icon(Icons.style_outlined),
+                          title: Text(v.name),
+                          subtitle: Text(
+                            'Harga: ${formatMinor(v.salePriceMinor ?? p.salePriceMinor)}'
+                            '${p.trackStock ? ' • Stok: ${microToDecimalString(v.stockQuantityMicro)}' : ''}',
+                          ),
+                          onTap: () {
+                            ref.read(cartProvider.notifier).addVariantOrUnit(
+                                  product: p,
+                                  variantId: v.id,
+                                  variantName: v.name,
+                                  unitPriceMinor:
+                                      v.salePriceMinor ?? p.salePriceMinor,
+                                  currentStockMicro: v.stockQuantityMicro,
+                                );
+                            Navigator.pop(sheetCtx);
+                          },
+                        ),
+                    ],
+                    if (units.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: Text(
+                          'Satuan Lain',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      for (final u in units)
+                        ListTile(
+                          leading: const Icon(Icons.straighten_outlined),
+                          title: Text('Satuan: ${u.unitName}'),
+                          subtitle: Text(
+                            '1 ${u.unitName} = ${microToDecimalString(u.entry.conversionToBaseMicro)} base • '
+                            'Harga: ${formatMinor(u.entry.salePriceOverrideMinor ?? ((p.salePriceMinor * u.entry.conversionToBaseMicro) ~/ quantityScale))}',
+                          ),
+                          onTap: () {
+                            final price = u.entry.salePriceOverrideMinor ??
+                                ((p.salePriceMinor *
+                                        u.entry.conversionToBaseMicro) ~/
+                                    quantityScale);
+                            ref.read(cartProvider.notifier).addVariantOrUnit(
+                                  product: p,
+                                  unitId: u.entry.unitId,
+                                  unitName: u.unitName,
+                                  conversionFactorMicro:
+                                      u.entry.conversionToBaseMicro,
+                                  unitPriceMinor: price,
+                                );
+                            Navigator.pop(sheetCtx);
+                          },
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _checkout() async {
     final cart = ref.read(cartProvider);
     if (cart.isEmpty) return;
@@ -67,6 +208,8 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
       for (final l in cart.lines)
         SaleLineInput(
           productId: l.productId,
+          variantId: l.variantId,
+          unitId: l.unitId,
           qtyMicro: l.qtyMicro,
           unitPriceMinor: l.unitPriceMinor,
         ),
@@ -249,7 +392,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                         Icons.add_circle_outline,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                      onTap: () => ref.read(cartProvider.notifier).add(p),
+                      onTap: () => _onSelectProduct(p),
                     ),
                 ],
               ),
@@ -277,7 +420,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                     children: [
                       for (final l in cart.lines)
                         ListTile(
-                          title: Text(l.name),
+                          title: Text(l.displayName),
                           subtitle: Text(
                             '${microToDecimalString(l.qtyMicro)} x '
                             '${formatMinor(l.unitPriceMinor)}'
@@ -289,14 +432,14 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                               IconButton(
                                 onPressed: () => ref
                                     .read(cartProvider.notifier)
-                                    .decrement(l.productId),
+                                    .decrementByKey(l.cartKey),
                                 icon: const Icon(Icons.remove_circle_outline),
                               ),
                               Text(microToDecimalString(l.qtyMicro)),
                               IconButton(
                                 onPressed: () => ref
                                     .read(cartProvider.notifier)
-                                    .increment(l.productId),
+                                    .incrementByKey(l.cartKey),
                                 icon: const Icon(Icons.add_circle_outline),
                               ),
                             ],
