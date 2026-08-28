@@ -12,12 +12,12 @@ void main() {
 
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'Owner'),
-        );
-    businessId = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko Uji'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'Owner'));
+    businessId = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko Uji'));
   });
 
   tearDown(() async => db.close());
@@ -41,13 +41,35 @@ void main() {
 
     test('addCategory + rename + deactivate', () async {
       final refs = ReferenceRepository(db);
-      final id = await refs.addCategory(businessId: businessId, name: 'Minuman');
+      final id = await refs.addCategory(
+        businessId: businessId,
+        name: 'Minuman',
+      );
       await refs.renameCategory(id, 'Minuman Kemasan');
       await refs.setCategoryActive(id, false);
 
       final cats = await refs.categories(businessId);
       expect(cats.single.name, 'Minuman Kemasan');
       expect(cats.single.isActive, isFalse);
+    });
+
+    test('unit can be renamed and deactivated', () async {
+      final refs = ReferenceRepository(db);
+      final id = await refs.addUnit(
+        businessId: businessId,
+        code: 'kg',
+        name: 'Kilogram',
+      );
+
+      await refs.updateUnit(id: id, code: 'kilogram', name: 'Kilogram');
+      await refs.setUnitActive(id, false);
+
+      final unit = (await refs.units(
+        businessId,
+      )).singleWhere((u) => u.id == id);
+      expect(unit.code, 'kilogram');
+      expect(unit.name, 'Kilogram');
+      expect(unit.isActive, isFalse);
     });
   });
 
@@ -64,33 +86,32 @@ void main() {
       await refs.ensureDefaults(businessId);
       pcsUnitId = (await refs.unitByCode(businessId, 'pcs'))!.id;
       dusUnitId = (await refs.unitByCode(businessId, 'dus'))!.id;
-      retailTierId =
-          (await refs.priceTiers(businessId)).firstWhere((t) => t.name == 'Retail').id;
+      retailTierId = (await refs.priceTiers(
+        businessId,
+      )).firstWhere((t) => t.name == 'Retail').id;
     });
 
     ProductDraft draft({
       String name = 'Kopi Arabica',
       String? sku = 'KPI-001',
-    }) =>
-        ProductDraft(
-          businessId: businessId,
-          name: name,
-          sku: sku,
-          baseUnitId: pcsUnitId,
-          costPriceMinor: 8000,
-          salePriceMinor: 12000,
-          wholesalePriceMinor: 10500,
-          minStockMicro: 5000000, // 5 pcs
-          units: [ProductUnitInput(unitId: dusUnitId, conversionToBase: '24')],
-          variants: [
-            VariantInput(name: '200g', salePriceMinor: 12000),
-            VariantInput(name: '500g', salePriceMinor: 25000),
-          ],
-          tierPrices: [TierPriceInput(tierId: retailTierId, priceMinor: 11500)],
-        );
+    }) => ProductDraft(
+      businessId: businessId,
+      name: name,
+      sku: sku,
+      baseUnitId: pcsUnitId,
+      costPriceMinor: 8000,
+      salePriceMinor: 12000,
+      wholesalePriceMinor: 10500,
+      minStockMicro: 5000000, // 5 pcs
+      units: [ProductUnitInput(unitId: dusUnitId, conversionToBase: '24')],
+      variants: [
+        VariantInput(name: '200g', salePriceMinor: 12000),
+        VariantInput(name: '500g', salePriceMinor: 25000),
+      ],
+      tierPrices: [TierPriceInput(tierId: retailTierId, priceMinor: 11500)],
+    );
 
-    test('createProduct writes full aggregate; detail loads it back',
-        () async {
+    test('createProduct writes full aggregate; detail loads it back', () async {
       final id = await products.createProduct(draft());
 
       final detail = (await products.detail(id))!;
@@ -103,9 +124,7 @@ void main() {
 
     test('search matches name/sku and applies filters', () async {
       await products.createProduct(draft());
-      await products.createProduct(
-        draft(name: 'Gula Pasir', sku: 'GLP-001'),
-      );
+      await products.createProduct(draft(name: 'Gula Pasir', sku: 'GLP-001'));
       // Out-of-stock candidate (cache starts at 0).
       await products.createProduct(draft(name: 'Teh Celup', sku: 'TEH-001'));
 
@@ -151,9 +170,9 @@ void main() {
       expect(detail.units, isEmpty);
 
       // Old variant rows must be gone.
-      final variantCount = await (db.select(db.productVariants)
-            ..where((t) => t.productId.equals(id)))
-          .get();
+      final variantCount = await (db.select(
+        db.productVariants,
+      )..where((t) => t.productId.equals(id))).get();
       expect(variantCount, hasLength(1));
     });
 
@@ -210,8 +229,10 @@ void main() {
       final all = await repo.list(businessId: businessId);
       expect(all, hasLength(2));
       await repo.rename(all.first.id, 'CV Sumber Kopi Utama');
-      expect((await repo.list(businessId: businessId)).first.name,
-          'CV Sumber Kopi Utama');
+      expect(
+        (await repo.list(businessId: businessId)).first.name,
+        'CV Sumber Kopi Utama',
+      );
     });
 
     test('salesman create requires unique code per business', () async {

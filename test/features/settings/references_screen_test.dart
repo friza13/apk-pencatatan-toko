@@ -8,14 +8,18 @@ import 'package:notakit/features/products/data/reference_repository.dart';
 import 'package:notakit/features/settings/presentation/references_screen.dart';
 
 void main() {
-  testWidgets('adding from the Kategori tab creates a category', (tester) async {
+  testWidgets('adding from the Kategori tab creates a category', (
+    tester,
+  ) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
-    final ownerId = await db.into(db.owners).insert(
-          OwnersCompanion.insert(name: 'Owner'),
-        );
-    final business = await db.into(db.businesses).insertReturning(
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'Owner'));
+    final business = await db
+        .into(db.businesses)
+        .insertReturning(
           BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko Uji'),
         );
 
@@ -23,12 +27,15 @@ void main() {
       ProviderScope(
         overrides: [
           currentBusinessProvider.overrideWith((ref) async => business),
-          referenceRepositoryProvider
-              .overrideWith((ref) async => ReferenceRepository(db)),
-          categoriesStreamProvider
-              .overrideWith((ref) => Stream.value(const <Category>[])),
-          unitsStreamProvider
-              .overrideWith((ref) => Stream.value(const <Unit>[])),
+          referenceRepositoryProvider.overrideWith(
+            (ref) async => ReferenceRepository(db),
+          ),
+          categoriesStreamProvider.overrideWith(
+            (ref) => Stream.value(const <Category>[]),
+          ),
+          unitsStreamProvider.overrideWith(
+            (ref) => Stream.value(const <Unit>[]),
+          ),
         ],
         child: const MaterialApp(home: ReferencesScreen()),
       ),
@@ -43,9 +50,9 @@ void main() {
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 
-    final categories = await (db.select(db.categories)
-          ..where((t) => t.businessId.equals(business.id)))
-        .get();
+    final categories = await (db.select(
+      db.categories,
+    )..where((t) => t.businessId.equals(business.id))).get();
     expect(categories.map((category) => category.name), contains('Minuman'));
   });
 }

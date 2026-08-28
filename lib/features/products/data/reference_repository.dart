@@ -10,45 +10,53 @@ class ReferenceRepository {
 
   // ---------- Categories ----------
 
-  Future<List<Category>> categories(int businessId) => (_db.select(
-        _db.categories,
-      )
-        ..where((t) => t.businessId.equals(businessId))
-        ..orderBy([(t) => OrderingTerm.asc(t.sortOrder), (t) => OrderingTerm.asc(t.name)]))
-      .get();
+  Future<List<Category>> categories(int businessId) =>
+      (_db.select(_db.categories)
+            ..where((t) => t.businessId.equals(businessId))
+            ..orderBy([
+              (t) => OrderingTerm.asc(t.sortOrder),
+              (t) => OrderingTerm.asc(t.name),
+            ]))
+          .get();
 
   Future<int> addCategory({
     required int businessId,
     required String name,
     int? parentId,
     int sortOrder = 0,
-  }) =>
-      _db.into(_db.categories).insert(CategoriesCompanion.insert(
-            businessId: businessId,
-            name: name,
-            parentId: Value(parentId),
-            sortOrder: Value(sortOrder),
-          ));
+  }) => _db
+      .into(_db.categories)
+      .insert(
+        CategoriesCompanion.insert(
+          businessId: businessId,
+          name: name,
+          parentId: Value(parentId),
+          sortOrder: Value(sortOrder),
+        ),
+      );
 
   Future<void> renameCategory(int id, String name) =>
-      (_db.update(_db.categories)..where((t) => t.id.equals(id)))
-          .write(CategoriesCompanion(name: Value(name)));
+      (_db.update(_db.categories)..where((t) => t.id.equals(id))).write(
+        CategoriesCompanion(name: Value(name)),
+      );
 
   Future<void> setCategoryActive(int id, bool active) =>
-      (_db.update(_db.categories)..where((t) => t.id.equals(id)))
-          .write(CategoriesCompanion(isActive: Value(active)));
+      (_db.update(_db.categories)..where((t) => t.id.equals(id))).write(
+        CategoriesCompanion(isActive: Value(active)),
+      );
 
   // ---------- Units ----------
 
-  Future<List<Unit>> units(int businessId) => (_db.select(_db.units)
-        ..where((t) => t.businessId.equals(businessId))
-        ..orderBy([(t) => OrderingTerm.asc(t.code)]))
-      .get();
+  Future<List<Unit>> units(int businessId) =>
+      (_db.select(_db.units)
+            ..where((t) => t.businessId.equals(businessId))
+            ..orderBy([(t) => OrderingTerm.asc(t.code)]))
+          .get();
 
   Future<Unit?> unitByCode(int businessId, String code) =>
-      (_db.select(_db.units)
-            ..where((t) => t.businessId.equals(businessId) &
-                t.code.equals(code)))
+      (_db.select(_db.units)..where(
+            (t) => t.businessId.equals(businessId) & t.code.equals(code),
+          ))
           .getSingleOrNull();
 
   Future<int> addUnit({
@@ -57,50 +65,77 @@ class ReferenceRepository {
     required String name,
     String? symbol,
     int decimalScale = 0,
-  }) =>
-      _db.into(_db.units).insert(UnitsCompanion.insert(
-            businessId: businessId,
-            code: code,
-            name: name,
-            symbol: Value(symbol),
-            decimalScale: Value(decimalScale),
-          ));
+  }) => _db
+      .into(_db.units)
+      .insert(
+        UnitsCompanion.insert(
+          businessId: businessId,
+          code: code,
+          name: name,
+          symbol: Value(symbol),
+          decimalScale: Value(decimalScale),
+        ),
+      );
+
+  Future<void> updateUnit({
+    required int id,
+    required String code,
+    required String name,
+    String? symbol,
+    int decimalScale = 0,
+  }) => (_db.update(_db.units)..where((t) => t.id.equals(id))).write(
+    UnitsCompanion(
+      code: Value(code),
+      name: Value(name),
+      symbol: Value(symbol),
+      decimalScale: Value(decimalScale),
+    ),
+  );
+
+  Future<void> setUnitActive(int id, bool active) =>
+      (_db.update(_db.units)..where((t) => t.id.equals(id))).write(
+        UnitsCompanion(isActive: Value(active)),
+      );
 
   // ---------- Price tiers ----------
 
   Future<List<PriceTier>> priceTiers(int businessId) => (_db.select(
-        _db.priceTiers,
-      )..where((t) => t.businessId.equals(businessId))).get();
+    _db.priceTiers,
+  )..where((t) => t.businessId.equals(businessId))).get();
 
   Future<int> addPriceTier({
     required int businessId,
     required String name,
     required int priority,
-  }) =>
-      _db.into(_db.priceTiers).insert(PriceTiersCompanion.insert(
-            businessId: businessId,
-            name: name,
-            priority: Value(priority),
-          ));
+  }) => _db
+      .into(_db.priceTiers)
+      .insert(
+        PriceTiersCompanion.insert(
+          businessId: businessId,
+          name: name,
+          priority: Value(priority),
+        ),
+      );
 
   // ---------- Customer types ----------
 
-  Future<List<CustomerType>> customerTypes(int businessId) =>
-      (_db.select(_db.customerTypes)
-            ..where((t) => t.businessId.equals(businessId)))
-          .get();
+  Future<List<CustomerType>> customerTypes(int businessId) => (_db.select(
+    _db.customerTypes,
+  )..where((t) => t.businessId.equals(businessId))).get();
 
   Future<int> addCustomerType({
     required int businessId,
     required String name,
     int? defaultPaymentTermDays,
-  }) =>
-      _db.into(_db.customerTypes).insert(CustomerTypesCompanion.insert(
-            businessId: businessId,
-            name: name,
-            defaultPaymentTermDays:
-                Value(defaultPaymentTermDays ?? 0),
-          ));
+  }) => _db
+      .into(_db.customerTypes)
+      .insert(
+        CustomerTypesCompanion.insert(
+          businessId: businessId,
+          name: name,
+          defaultPaymentTermDays: Value(defaultPaymentTermDays ?? 0),
+        ),
+      );
 
   /// Seeds sensible starter data for a brand-new business. Safe to call
   /// repeatedly — existing codes/names are skipped.

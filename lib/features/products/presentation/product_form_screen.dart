@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,8 +6,8 @@ import '../../../core/units/quantity.dart';
 import '../controllers/products_providers.dart';
 import '../data/product_repository.dart';
 
-/// Create/edit product. Layout follows DESAIN Â§41: simple fields first,
-/// advanced sections collapsed. Stock quantity is NOT editable here (D-014) â€”
+/// Create/edit product. Layout follows DESAIN section 41: simple fields first,
+/// advanced sections collapsed. Stock quantity is NOT editable here (D-014).
 /// it changes only through inventory movements (P5).
 class ProductFormScreen extends ConsumerStatefulWidget {
   const ProductFormScreen({super.key, this.productId});
@@ -31,7 +31,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   String _type = 'goods';
   bool _trackStock = true;
 
-  /// Conversion rows for non-base units: unitId â†’ factor text.
+  /// Conversion rows for non-base units: unitId -> factor text.
   final Map<int, TextEditingController> _unitFactors = {};
 
   /// Variant rows: (name, price) controllers.
@@ -50,8 +50,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   Future<void> _loadExisting() async {
     await ref.read(unitsStreamProvider.future);
     if (widget.productId != null) {
-      final detail =
-          await (await ref.read(productRepositoryProvider.future)).detail(widget.productId!);
+      final detail = await (await ref.read(
+        productRepositoryProvider.future,
+      )).detail(widget.productId!);
       if (detail != null && mounted) {
         final p = detail.product;
         _name.text = p.name;
@@ -148,8 +149,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         costPriceMinor: _parseMoney(_costPrice.text) ?? 0,
         salePriceMinor: _parseMoney(_salePrice.text)!,
         wholesalePriceMinor: _parseMoney(_wholesalePrice.text),
-        minStockMicro:
-            toMicro(_minStock.text.trim().isEmpty ? '0' : _minStock.text.trim()),
+        minStockMicro: toMicro(
+          _minStock.text.trim().isEmpty ? '0' : _minStock.text.trim(),
+        ),
         trackStock: _trackStock && _type == 'goods',
       );
 
@@ -158,20 +160,18 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         final factorText = entry.value.text.trim();
         if (factorText.isEmpty) continue;
         if (toMicro(factorText) <= quantityScale) continue; // must be > 1 base
-        draft.units.add(ProductUnitInput(
-          unitId: entry.key,
-          conversionToBase: factorText,
-        ));
+        draft.units.add(
+          ProductUnitInput(unitId: entry.key, conversionToBase: factorText),
+        );
       }
 
       // Variants (skip empty names).
       for (final (n, p) in _variants) {
         final name = n.text.trim();
         if (name.isEmpty) continue;
-        draft.variants.add(VariantInput(
-          name: name,
-          salePriceMinor: _parseMoney(p.text),
-        ));
+        draft.variants.add(
+          VariantInput(name: name, salePriceMinor: _parseMoney(p.text)),
+        );
       }
 
       await ref
@@ -200,8 +200,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(widget.productId == null ? 'Tambah Produk' : 'Edit Produk'),
+        title: Text(widget.productId == null ? 'Tambah Produk' : 'Edit Produk'),
       ),
       body: _loadingExisting || units.isEmpty
           ? const Center(child: CircularProgressIndicator())
@@ -210,8 +209,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               children: [
                 TextField(
                   controller: _name,
-                  decoration:
-                      const InputDecoration(labelText: 'Nama produk *'),
+                  decoration: const InputDecoration(labelText: 'Nama produk *'),
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 12),
@@ -229,69 +227,75 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   initialValue: _categoryId,
                   decoration: const InputDecoration(labelText: 'Kategori'),
                   items: [
-                  DropdownMenuItem<int?>(
-                        child: Text('- Tanpa kategori -')),
-                    ...categories.map((c) => DropdownMenuItem(
-                          value: c.id,
-                          child: Text(c.name),
-                        )),
+                    DropdownMenuItem<int?>(child: Text('- Tanpa kategori -')),
+                    ...categories.map(
+                      (c) => DropdownMenuItem(value: c.id, child: Text(c.name)),
+                    ),
                   ],
                   onChanged: (v) => setState(() => _categoryId = v),
                 ),
                 const SizedBox(height: 12),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _sku,
-                      decoration: const InputDecoration(labelText: 'SKU'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _sku,
+                        decoration: const InputDecoration(labelText: 'SKU'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _barcode,
-                      decoration:
-                          const InputDecoration(labelText: 'Barcode'),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _barcode,
+                        decoration: const InputDecoration(labelText: 'Barcode'),
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 Text('Harga', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _costPrice,
-                      keyboardType: TextInputType.number,
-                      decoration:
-                          const InputDecoration(labelText: 'Harga beli/modal'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _costPrice,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Harga beli/modal',
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _salePrice,
-                      keyboardType: TextInputType.number,
-                      decoration:
-                          const InputDecoration(labelText: 'Harga jual *'),
-                      onChanged: (_) => setState(() {}),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _salePrice,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Harga jual *',
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
                     ),
-                  ),
-                ]),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _wholesalePrice,
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                      labelText: 'Harga grosir (opsional)'),
+                    labelText: 'Harga grosir (opsional)',
+                  ),
                 ),
                 const SizedBox(height: 20),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Lacak stok'),
-                  subtitle: Text(_type == 'goods'
-                      ? 'Stok berkurang saat penjualan.'
-                      : 'Hanya barang yang dilacak stoknya.'),
+                  subtitle: Text(
+                    _type == 'goods'
+                        ? 'Stok berkurang saat penjualan.'
+                        : 'Hanya barang yang dilacak stoknya.',
+                  ),
                   value: _trackStock && _type == 'goods',
                   onChanged: _type != 'goods'
                       ? null
@@ -300,11 +304,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 if (_trackStock && _type == 'goods') ...[
                   TextField(
                     controller: _minStock,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(
-                        labelText: 'Batas stok minimum',
-                        helperText: 'Contoh: 5 (pcs). Untuk notifikasi menipis.'),
+                      labelText: 'Batas stok minimum',
+                      helperText: 'Contoh: 5 (pcs). Untuk notifikasi menipis.',
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -313,11 +319,15 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   ),
                 ],
                 const SizedBox(height: 20),
-                Text('Satuan konversi',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Satuan konversi',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 4),
-                Text('Satuan dasar: ${units.first.code} (pcs dasar)',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  'Satuan dasar: ${units.first.code}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 ...units.skip(1).map((u) {
                   _unitFactors.putIfAbsent(u.id, TextEditingController.new);
                   return Padding(
@@ -325,10 +335,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     child: TextField(
                       controller: _unitFactors[u.id],
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       decoration: InputDecoration(
-                        labelText: '1 ${u.code} = â€¦ ${units.first.code}',
-                        hintText: 'kosongkan jika tidak dipakai',
+                        labelText: '1 ${u.code} = ... ${units.first.code}',
+                        hintText:
+                            'Isi jumlah ${units.first.code} dalam 1 ${u.code}',
                       ),
                     ),
                   );
@@ -337,32 +349,39 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 ExpansionTile(
                   tilePadding: EdgeInsets.zero,
                   initiallyExpanded: _variants.isNotEmpty,
-                  title: Text('Varian (${_variants.length})',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  title: Text(
+                    'Varian (${_variants.length})',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   children: [
                     for (var i = 0; i < _variants.length; i++)
-                      Row(children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _variants[i].$1,
-                            decoration: const InputDecoration(
-                                labelText: 'Nama varian'),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _variants[i].$1,
+                              decoration: const InputDecoration(
+                                labelText: 'Nama varian',
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _variants[i].$2,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                                labelText: 'Harga jual'),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _variants[i].$2,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Harga jual',
+                              ),
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => setState(() => _variants.removeAt(i)),
-                        ),
-                      ]),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () =>
+                                setState(() => _variants.removeAt(i)),
+                          ),
+                        ],
+                      ),
                     TextButton.icon(
                       onPressed: () {
                         setState(() {
@@ -380,9 +399,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(_error!,
-                        style:
-                            TextStyle(color: Theme.of(context).colorScheme.error)),
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ),
                 const SizedBox(height: 8),
                 FilledButton(
@@ -390,11 +412,13 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                   ),
-                  child: Text(_saving
-                      ? 'Menyimpan...'
-                      : widget.productId == null
-                          ? 'Simpan Produk'
-                          : 'Update Produk'),
+                  child: Text(
+                    _saving
+                        ? 'Menyimpan...'
+                        : widget.productId == null
+                        ? 'Simpan Produk'
+                        : 'Update Produk',
+                  ),
                 ),
                 const SizedBox(height: 32),
               ],
