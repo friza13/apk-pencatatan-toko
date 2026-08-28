@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/money/money.dart';
 import '../../../core/units/quantity.dart';
+import '../../inventory/presentation/widgets/stock_action_sheet.dart';
 import '../controllers/products_providers.dart';
 
 /// Product detail with accordion sections (DESAIN §13).
@@ -14,7 +15,7 @@ class ProductDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final repo = ref.watch(productRepositoryProvider);
+    final detailAsync = ref.watch(productDetailProvider(productId));
 
     return Scaffold(
       appBar: AppBar(
@@ -26,141 +27,185 @@ class ProductDetailScreen extends ConsumerWidget {
             onPressed: () async {
               await context.push('/products/$productId/edit');
               // refresh after edit
-              // ignore: unawaited_futures
-              ref.invalidate(productsControllerProvider);
+              ref
+                ..invalidate(productDetailProvider(productId))
+                ..invalidate(productsControllerProvider);
             },
           ),
         ],
       ),
-      body: repo.when(
+      body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
-        data: (repository) => FutureBuilder(
-          future: repository.detail(productId),
-          builder: (context, snap) {
-            if (!snap.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final detail = snap.data;
-            if (detail == null) {
-              return const Center(child: Text('Produk tidak ditemukan.'));
-            }
-            final p = detail.product;
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(p.name, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 4),
-                Text(
-                  [
-                    if (p.sku != null && p.sku!.isNotEmpty) 'SKU ${p.sku}',
-                    if (p.barcode != null && p.barcode!.isNotEmpty) p.barcode!,
-                    switch (p.type) {
-                      'goods' => 'Barang',
-                      'service' => 'Jasa',
-                      _ => 'Non-stok',
-                    },
-                  ].join(' • '),
-                  style: Theme.of(context).textTheme.bodySmall,
+        data: (detail) {
+          if (detail == null) {
+            return const Center(child: Text('Produk tidak ditemukan.'));
+          }
+          final p = detail.product;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(p.name, style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 4),
+              Text(
+                [
+                  if (p.sku != null && p.sku!.isNotEmpty) 'SKU ${p.sku}',
+                  if (p.barcode != null && p.barcode!.isNotEmpty) p.barcode!,
+                  switch (p.type) {
+                    'goods' => 'Barang',
+                    'service' => 'Jasa',
+                    _ => 'Non-stok',
+                  },
+                ].join(' • '),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              if (!p.isActive)
+                Chip(
+                  label: const Text('Nonaktif'),
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                 ),
-                const SizedBox(height: 12),
-                if (!p.isActive)
-                  Chip(
-                    label: const Text('Nonaktif'),
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+              const SizedBox(height: 8),
+              _Accordion(
+                title: 'Harga',
+                initiallyExpanded: true,
+                children: [
+                  _kv('Harga jual', formatMinor(p.salePriceMinor)),
+                  _kv(
+                    'Harga grosir',
+                    p.wholesalePriceMinor == null
+                        ? '-'
+                        : formatMinor(p.wholesalePriceMinor!),
                   ),
-                const SizedBox(height: 8),
-                _Accordion(
-                  title: 'Harga',
-                  initiallyExpanded: true,
-                  children: [
-                    _kv('Harga jual', formatMinor(p.salePriceMinor)),
-                    _kv(
-                      'Harga grosir',
-                      p.wholesalePriceMinor == null
-                          ? '-'
-                          : formatMinor(p.wholesalePriceMinor!),
-                    ),
-                    _kv('Harga beli/modal', formatMinor(p.costPriceMinor)),
-                  ],
-                ),
-                _Accordion(
-                  title: 'Stok',
-                  children: [
-                    _kv(
-                      'Stok saat ini',
-                      p.trackStock
-                          ? microToDecimalString(p.stockQuantityMicro)
-                          : 'Tidak dilacak',
-                    ),
-                    if (p.trackStock)
-                      _kv(
-                        'Batas minimum',
-                        microToDecimalString(p.minStockMicro),
-                      ),
-                  ],
-                ),
-                if (detail.variants.isNotEmpty)
-                  _Accordion(
-                    title: 'Varian',
-                    children: [
-                      for (final v in detail.variants)
-                        ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(v.name),
-                          trailing: Text(formatMinor(v.salePriceMinor ?? 0)),
-                        ),
-                    ],
+                  _kv('Harga beli/modal', formatMinor(p.costPriceMinor)),
+                ],
+              ),
+              _Accordion(
+                title: 'Stok',
+                initiallyExpanded: true,
+                children: [
+                  _kv(
+                    'Stok saat ini',
+                    p.trackStock
+                        ? microToDecimalString(p.stockQuantityMicro)
+                        : 'Tidak dilacak',
                   ),
-                if (detail.units.isNotEmpty)
-                  _Accordion(
-                    title: 'Satuan konversi',
-                    children: [
-                      for (final u in detail.units)
-                        ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(u.unitName),
-                          trailing: Text(
-                            '1 ${u.unitCode} = '
-                            '${microToDecimalString(u.entry.conversionToBaseMicro)}',
+                  if (p.trackStock)
+                    _kv(
+                      'Batas minimum',
+                      microToDecimalString(p.minStockMicro),
+                    ),
+                  if (p.trackStock) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.tune, size: 18),
+                            label: const Text('Atur Stok'),
+                            onPressed: () => showStockActionSheet(
+                              context: context,
+                              ref: ref,
+                              product: p,
+                              variants: detail.variants,
+                              onUpdated: () => ref.invalidate(
+                                productDetailProvider(productId),
+                              ),
+                            ),
                           ),
                         ),
-                    ],
-                  ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  icon: Icon(
-                    p.isActive
-                        ? Icons.archive_outlined
-                        : Icons.unarchive_outlined,
-                  ),
-                  label: Text(
-                    p.isActive ? 'Arsipkan produk' : 'Aktifkan kembali',
-                  ),
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final navigator = Navigator.of(context);
-                    final notifier = ref.read(
-                      productsControllerProvider.notifier,
-                    );
-                    await notifier.toggleActive(p);
-                    ref.invalidate(productsControllerProvider);
-                    navigator.pop();
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Status produk diperbarui.'),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(
+                              Icons.receipt_long_outlined,
+                              size: 18,
+                            ),
+                            label: const Text('Kartu Stok'),
+                            onPressed: () =>
+                                context.push('/more/stock/${p.id}'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Aktifkan Pelacakan Stok'),
+                      onPressed: () async {
+                        await context.push('/products/$productId/edit');
+                        ref
+                          ..invalidate(productDetailProvider(productId))
+                          ..invalidate(productsControllerProvider);
+                      },
+                    ),
+                  ],
+                ],
+              ),
+              if (detail.variants.isNotEmpty)
+                _Accordion(
+                  title: 'Varian',
+                  children: [
+                    for (final v in detail.variants)
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(v.name),
+                        subtitle: Text(
+                          'Stok: ${microToDecimalString(v.stockQuantityMicro)}',
+                        ),
+                        trailing: Text(formatMinor(v.salePriceMinor ?? 0)),
                       ),
-                    );
-                  },
+                  ],
                 ),
-              ],
-            );
-          },
-        ),
+              if (detail.units.isNotEmpty)
+                _Accordion(
+                  title: 'Satuan konversi',
+                  children: [
+                    for (final u in detail.units)
+                      ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(u.unitName),
+                        trailing: Text(
+                          '1 ${u.unitCode} = '
+                          '${microToDecimalString(u.entry.conversionToBaseMicro)}',
+                        ),
+                      ),
+                  ],
+                ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                icon: Icon(
+                  p.isActive
+                      ? Icons.archive_outlined
+                      : Icons.unarchive_outlined,
+                ),
+                label: Text(
+                  p.isActive ? 'Arsipkan produk' : 'Aktifkan kembali',
+                ),
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
+                  final notifier = ref.read(
+                    productsControllerProvider.notifier,
+                  );
+                  await notifier.toggleActive(p);
+                  ref.invalidate(productsControllerProvider);
+                  navigator.pop();
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Status produk diperbarui.'),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }

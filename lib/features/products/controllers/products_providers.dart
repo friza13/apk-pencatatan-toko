@@ -142,3 +142,13 @@ final StreamProvider<List<PriceTier>> tiersStreamProvider =
         db.priceTiers,
       )..where((t) => t.businessId.equals(business.id))).watch();
     });
+
+/// Detail provider for reactive updates on single product view.
+final productDetailProvider = FutureProvider.family<ProductDetail?, int>((
+  ref,
+  id,
+) async {
+  final repo = await ref.watch(productRepositoryProvider.future);
+  return repo.detail(id);
+});
+
