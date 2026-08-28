@@ -29,7 +29,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pinConfirm = TextEditingController();
 
   int _step = 0;
-  int _dataChoice = 0; // 0=kosong, 1=demo
+  int _dataChoice = 0; // 0=kosong, 1=restore
   bool _busy = false;
   String? _error;
 
@@ -80,11 +80,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Pulihkan')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Pulihkan'),
+          ),
         ],
       ),
     );
@@ -96,11 +98,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     });
     try {
       final service = await ref.read(backupServiceProvider.future);
-      final preview =
-          await service.inspect(nkbFile: File(path), password: passwordC.text);
+      final preview = await service.inspect(
+        nkbFile: File(path),
+        password: passwordC.text,
+      );
 
       // Tutup koneksi DB kosong bawaan onboarding sebelum file ditimpa.
-      ref.invalidate(appDatabaseProvider);
+      await closeAppDatabaseForRestore(
+        readDatabase: () => ref.read(appDatabaseProvider.future),
+        invalidateDatabase: () => ref.invalidate(appDatabaseProvider),
+      );
 
       final docs = await getDocsDir();
       await service.applyRestore(
@@ -116,31 +123,36 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // PIN baru untuk perangkat ini.
       ref.invalidate(appDatabaseProvider);
       final repo = AuthRepository(
-          db: await ref.read(appDatabaseProvider.future),
-          secureStore: secure);
+        db: await ref.read(appDatabaseProvider.future),
+        secureStore: secure,
+      );
       if (!mounted) return;
       final pinC = TextEditingController();
       final pinSaved = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Buat PIN baru'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text(
-                'Data berhasil dipulihkan. Buat PIN baru untuk perangkat ini.'),
-            const SizedBox(height: 12),
-            TextField(
-              controller: pinC,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              decoration:
-                  const InputDecoration(labelText: 'PIN (6 digit)'),
-            ),
-          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Data berhasil dipulihkan. Buat PIN baru untuk perangkat ini.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pinC,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: const InputDecoration(labelText: 'PIN (6 digit)'),
+              ),
+            ],
+          ),
           actions: [
             FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Simpan')),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Simpan'),
+            ),
           ],
         ),
       );
@@ -163,10 +175,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _error = null;
     });
     try {
-      final businessId = await ref.read(authControllerProvider.notifier).onboard(
-          ownerName: _ownerName.text.trim(),
-          businessName: _businessName.text.trim(),
-          pin: _pin.text);
+      final businessId = await ref
+          .read(authControllerProvider.notifier)
+          .onboard(
+            ownerName: _ownerName.text.trim(),
+            businessName: _businessName.text.trim(),
+            pin: _pin.text,
+          );
       if (_dataChoice == 1) {
         final db = await ref.read(appDatabaseProvider.future);
         await DemoDataSeeder(db).seed(businessId);
@@ -189,20 +204,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Langkah ${_step + 1} dari 3',
-                  style: theme.textTheme.labelLarge),
+              Text(
+                'Langkah ${_step + 1} dari 3',
+                style: theme.textTheme.labelLarge,
+              ),
               const SizedBox(height: 8),
               LinearProgressIndicator(value: (_step + 1) / 3),
               const SizedBox(height: 24),
               Expanded(child: _buildStep(theme)),
               if (_error != null) ...[
-                Text(_error!,
-                    style: TextStyle(color: theme.colorScheme.error)),
+                Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
                 const SizedBox(height: 8),
               ],
               FilledButton(
-                onPressed:
-                    (_canContinue && !_busy) ? _onContinue : null,
+                onPressed: (_canContinue && !_busy) ? _onContinue : null,
                 child: Text(_step < 2 ? 'Lanjut' : 'Mulai dengan NotaKit'),
               ),
             ],
@@ -216,7 +231,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_step < 2) {
       // Pilihan "Pulihkan dari backup" langsung menjalankan import
       // dan melewati step PIN (PIN baru diminta setelah restore).
-      if (_step == 1 && _dataChoice == 2) {
+      if (_step == 1 && _dataChoice == 1) {
         _importBackup();
         return;
       }
@@ -241,8 +256,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: _businessName,
-                decoration:
-                    const InputDecoration(labelText: 'Nama usaha'),
+                decoration: const InputDecoration(labelText: 'Nama usaha'),
                 onChanged: (_) => setState(() {}),
               ),
             ],
@@ -260,13 +274,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   value: 0,
                   title: const Text('Mulai dengan data kosong'),
                   subtitle: const Text(
-                      'Cocok untuk usaha yang baru mulai pakai NotaKit.'),
+                    'Cocok untuk usaha yang baru mulai pakai NotaKit.',
+                  ),
                 ),
                 RadioListTile<int>(
                   value: 1,
                   title: const Text('Pulihkan dari file backup'),
                   subtitle: const Text(
-                      'Pindahkan data dari HP lama lewat file .nkb.'),
+                    'Pindahkan data dari HP lama lewat file .nkb.',
+                  ),
                 ),
               ],
             ),
@@ -282,8 +298,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 obscureText: true,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                decoration:
-                    const InputDecoration(labelText: 'PIN (6 digit)'),
+                decoration: const InputDecoration(labelText: 'PIN (6 digit)'),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 12),
@@ -292,8 +307,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 obscureText: true,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                decoration:
-                    const InputDecoration(labelText: 'Ulangi PIN (6 digit)'),
+                decoration: const InputDecoration(
+                  labelText: 'Ulangi PIN (6 digit)',
+                ),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: 8),

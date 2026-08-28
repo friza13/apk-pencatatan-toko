@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,29 +24,34 @@ void main() {
     service = BackupService(db);
 
     // Seed minimal data: owner/business + 2 produk + 1 pelanggan.
-    final ownerId =
-        await db.into(db.owners).insert(OwnersCompanion.insert(name: 'O'));
-    final bid = await db.into(db.businesses).insert(
-          BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko Uji'),
-        );
+    final ownerId = await db
+        .into(db.owners)
+        .insert(OwnersCompanion.insert(name: 'O'));
+    final bid = await db
+        .into(db.businesses)
+        .insert(BusinessesCompanion.insert(ownerId: ownerId, name: 'Toko Uji'));
 
     final refs = ReferenceRepository(db);
     await refs.ensureDefaults(bid);
     final pcs = (await refs.unitByCode(bid, 'pcs'))!.id;
 
     final products = ProductRepository(db);
-    await products.createProduct(ProductDraft(
-      businessId: bid,
-      name: 'Kopi',
-      baseUnitId: pcs,
-      salePriceMinor: 10000,
-    ));
-    await products.createProduct(ProductDraft(
-      businessId: bid,
-      name: 'Gula',
-      baseUnitId: pcs,
-      salePriceMinor: 8000,
-    ));
+    await products.createProduct(
+      ProductDraft(
+        businessId: bid,
+        name: 'Kopi',
+        baseUnitId: pcs,
+        salePriceMinor: 10000,
+      ),
+    );
+    await products.createProduct(
+      ProductDraft(
+        businessId: bid,
+        name: 'Gula',
+        baseUnitId: pcs,
+        salePriceMinor: 8000,
+      ),
+    );
   });
 
   tearDown(() async {
@@ -54,13 +60,12 @@ void main() {
   });
 
   Future<Map<String, int>> counts() async => {
-        'products': await _count(db, 'products'),
-        'customers': await _count(db, 'customers'),
-        'sales': await _count(db, 'sales'),
-      };
+    'products': await _count(db, 'products'),
+    'customers': await _count(db, 'customers'),
+    'sales': await _count(db, 'sales'),
+  };
 
-  test('create -> inspect -> apply restore roundtrip preserves data',
-      () async {
+  test('create -> inspect -> apply restore roundtrip preserves data', () async {
     final nkb = await service.createBackup(
       sourceDbPath: sourceDb.path,
       saveToPath: '${tmp.path}/backup.nkb',
@@ -74,17 +79,17 @@ void main() {
     expect(await nkb.exists(), isTrue);
     expect(nkb.path.endsWith('.nkb'), isTrue);
 
-    final preview = await service.inspect(
-        nkbFile: nkb, password: 'rahasia123');
+    final preview = await service.inspect(nkbFile: nkb, password: 'rahasia123');
     expect(preview.schemaVersion, db.schemaVersion);
     expect(preview.recordCounts['products'], 2);
     expect(preview.dbKeyHex, 'aa' * 32);
 
     final targetPath = '${tmp.path}/restored.db';
     await service.applyRestore(
-        preview: preview,
-        targetDbPath: targetPath,
-        dbPassphrase: '');
+      preview: preview,
+      targetDbPath: targetPath,
+      dbPassphrase: '',
+    );
 
     final restored = AppDatabase(NativeDatabase(File(targetPath)));
     try {
@@ -114,8 +119,8 @@ void main() {
   });
 
   test('corrupted magic rejected', () async {
-    final bytes = List<int>.from([0x00, 0x01, 0x02, 0x03]) +
-        List<int>.filled(64, 7);
+    final bytes =
+        List<int>.from([0x00, 0x01, 0x02, 0x03]) + List<int>.filled(64, 7);
     final f = File('${tmp.path}/fake.nkb');
     await f.writeAsBytes(bytes);
 
@@ -148,12 +153,33 @@ void main() {
   });
 
   test('schema_version newer than app rejected', () async {
-    final bytes = <int>[
-      ...NkbContainer.magic,
-      ...NkbContainer.u32(0),
-    ];
+    final bytes = <int>[...NkbContainer.magic, ...NkbContainer.u32(0)];
     final f = File('${tmp.path}/empty.nkb');
     await f.writeAsBytes(bytes);
+
+    await expectLater(
+      service.inspect(nkbFile: f, password: 'x'),
+      throwsA(isA<BackupFormatException>()),
+    );
+  });
+
+  test('malformed encrypted payload is rejected as invalid backup', () async {
+    final manifest = NkbContainer.buildManifest(
+      schemaVersion: db.schemaVersion,
+      appVersion: appVersion,
+      recordCounts: const {},
+      saltHex: '00' * 16,
+      nonceHex: '00' * 12,
+      kdfIterations: 1,
+      checksumHex: NkbContainer.sha256Hex([1, 2, 3]),
+    );
+    final f = File('${tmp.path}/malformed.nkb');
+    await f.writeAsBytes(
+      NkbContainer.serialize(
+        manifest: manifest,
+        encryptedBlob: Uint8List.fromList([1, 2, 3]),
+      ),
+    );
 
     await expectLater(
       service.inspect(nkbFile: f, password: 'x'),
@@ -163,7 +189,6 @@ void main() {
 }
 
 Future<int> _count(AppDatabase db, String t) async {
-  final row =
-      await db.customSelect('SELECT count(*) AS c FROM $t').getSingle();
+  final row = await db.customSelect('SELECT count(*) AS c FROM $t').getSingle();
   return row.data['c'] as int;
 }

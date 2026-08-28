@@ -1,7 +1,9 @@
 import 'package:drift/native.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:notakit/core/security/pin_hasher.dart';
 import 'package:notakit/core/security/secure_store.dart';
 import 'package:notakit/database/app_database.dart';
@@ -35,41 +37,83 @@ class NoBiometric implements BiometricAuthenticator {
   Future<bool> authenticate({required String reason}) async => false;
 }
 
+class NoFileSelectedPicker extends FilePickerPlatform
+    with MockPlatformInterfaceMixin {
+  @override
+  Future<List<PlatformFile>> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    void Function(FilePickerStatus)? onFileLoading,
+    int compressionQuality = 0,
+    AndroidOptions androidOptions = const AndroidOptions(),
+    WindowsOptions windowsOptions = const WindowsOptions(),
+    LinuxOptions linuxOptions = const LinuxOptions(),
+    WebOptions webOptions = const WebOptions(),
+  }) async => [];
+}
+
 Future<ProviderContainer> _pumpFreshApp(WidgetTester tester) async {
   final db = AppDatabase(NativeDatabase.memory());
   addTearDown(db.close);
 
-  final container = ProviderContainer(overrides: [
-    appDatabaseProvider.overrideWith((ref) async => db),
-    secureStoreProvider.overrideWithValue(InMemorySecureStore()),
-    biometricAuthProvider.overrideWithValue(NoBiometric()),
-    pinHasherProvider.overrideWith((ref) => const PinHasher(iterations: 1000)),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appDatabaseProvider.overrideWith((ref) async => db),
+      secureStoreProvider.overrideWithValue(InMemorySecureStore()),
+      biometricAuthProvider.overrideWithValue(NoBiometric()),
+      pinHasherProvider.overrideWith(
+        (ref) => const PinHasher(iterations: 1000),
+      ),
+    ],
+  );
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
-    UncontrolledProviderScope(
-      container: container,
-      child: const NotaKitApp(),
-    ),
+    UncontrolledProviderScope(container: container, child: const NotaKitApp()),
   );
   await tester.pumpAndSettle();
   return container;
 }
 
 void main() {
-  testWidgets('fresh install shows onboarding; completing it reaches Beranda',
-      (tester) async {
+  testWidgets('selecting restore backup starts the restore flow', (
+    tester,
+  ) async {
+    final originalPicker = FilePickerPlatform.instance;
+    FilePickerPlatform.instance = NoFileSelectedPicker();
+    addTearDown(() => FilePickerPlatform.instance = originalPicker);
+    await _pumpFreshApp(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Nama kamu'), 'Budi');
+    await tester.pump();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nama usaha'),
+      'Toko Budi Jaya',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Lanjut'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mulai dari data kamu'), findsOneWidget);
+    await tester.tap(find.byType(RadioListTile<int>).at(1));
+    await tester.tap(find.text('Lanjut'));
+    await tester.pump();
+
+    expect(find.text('Mulai dari data kamu'), findsOneWidget);
+  });
+
+  testWidgets('fresh install shows onboarding; completing it reaches Beranda', (
+    tester,
+  ) async {
     final container = await _pumpFreshApp(tester);
 
     expect(find.byType(OnboardingScreen), findsOneWidget);
     expect(find.text('Kenalkan toko kamu'), findsOneWidget);
 
     // Step 1 — store identity.
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nama kamu'),
-      'Budi',
-    );
+    await tester.enterText(find.widgetWithText(TextField, 'Nama kamu'), 'Budi');
     await tester.pump();
     await tester.enterText(
       find.widgetWithText(TextField, 'Nama usaha'),
@@ -102,14 +146,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 10));
     await tester.pumpAndSettle();
 
-    expect((await container.read(authControllerProvider.future)).phase,
-        AuthPhase.unlocked);
+    expect(
+      (await container.read(authControllerProvider.future)).phase,
+      AuthPhase.unlocked,
+    );
     expect(find.byType(DashboardScreen), findsOneWidget);
     // AppBar menampilkan nama toko setelah onboarding.
   });
 
-  testWidgets('onboarded install shows lock screen; wrong pin rejected',
-      (tester) async {
+  testWidgets('onboarded install shows lock screen; wrong pin rejected', (
+    tester,
+  ) async {
     final container = await _pumpFreshApp(tester);
     await container
         .read(authControllerProvider.notifier)

@@ -56,10 +56,12 @@ class BackupCrypto {
     required Uint8List key,
     required Uint8List blob,
   }) async {
+    if (blob.length < nonceBytes + 16) {
+      throw const FormatException('Encrypted backup payload is truncated.');
+    }
     final algo = AesGcm.with256bits();
     final nonce = blob.sublist(0, nonceBytes);
-    final cipherText =
-        blob.sublist(nonceBytes, blob.length - 16);
+    final cipherText = blob.sublist(nonceBytes, blob.length - 16);
     final mac = Mac(blob.sublist(blob.length - 16));
 
     final clear = await algo.decrypt(
@@ -74,8 +76,7 @@ class BackupCrypto {
 class NkbBytes {
   NkbBytes._();
 
-  static Uint8List fromUtf8(String s) =>
-      Uint8List.fromList(utf8.encode(s));
+  static Uint8List fromUtf8(String s) => Uint8List.fromList(utf8.encode(s));
 
   static String toUtf8(List<int> b) => utf8.decode(b);
 
@@ -87,7 +88,6 @@ class NkbBytes {
     return out;
   }
 
-  static String hex(List<int> bytes) => bytes
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  static String hex(List<int> bytes) =>
+      bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }

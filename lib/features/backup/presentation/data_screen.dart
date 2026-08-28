@@ -10,7 +10,6 @@ import '../../products/controllers/products_providers.dart';
 import '../../security/providers.dart';
 import '../controllers/backup_providers.dart';
 
-
 /// Backup & Restore (.nkb) - DESAIN §23 flow.
 class DataScreen extends ConsumerStatefulWidget {
   const DataScreen({super.key});
@@ -34,36 +33,41 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Backup Sekarang'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(
-            controller: passwordC,
-            obscureText: true,
-            autofocus: true,
-            decoration:
-                const InputDecoration(labelText: 'Password backup *'),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Password tidak bisa dipulihkan oleh NotaKit. '
-            'Simpan di tempat aman.',
-            style: TextStyle(fontSize: 12),
-          ),
-        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: passwordC,
+              obscureText: true,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: 'Password backup *'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Password tidak bisa dipulihkan oleh NotaKit. '
+              'Simpan di tempat aman.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Buat Backup')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Buat Backup'),
+          ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
     final password = passwordC.text.trim();
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Password minimal 6 karakter.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password minimal 6 karakter.')),
+      );
       return;
     }
 
@@ -88,12 +92,14 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         dbPassphrase: await readDbKeyHex(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Backup dibuat:\n${file.path}')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Backup dibuat:\n${file.path}')));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Gagal: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -102,9 +108,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
   Future<void> _restore() async {
     // file_picker v12: pickFiles langsung mengembalikan List<PlatformFile>.
-    final picked = await FilePicker.pickFiles(
-      dialogTitle: 'Pilih file .nkb',
-    );
+    final picked = await FilePicker.pickFiles(dialogTitle: 'Pilih file .nkb');
     final path = picked.isEmpty ? null : picked.first.path;
     if (path == null || !mounted) return;
 
@@ -116,22 +120,27 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Pulihkan Data'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Data saat ini akan DIGANTI dengan isi backup.'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: passwordC,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Password backup'),
-          ),
-        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Data saat ini akan DIGANTI dengan isi backup.'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: passwordC,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password backup'),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Batal')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Lanjut')),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Lanjut'),
+          ),
         ],
       ),
     );
@@ -140,11 +149,16 @@ class _DataScreenState extends ConsumerState<DataScreen> {
     setState(() => _busy = true);
     try {
       // Tutup koneksi aktif agar file bisa ditimpa aman.
-      ref.invalidate(appDatabaseProvider);
+      await closeAppDatabaseForRestore(
+        readDatabase: () => ref.read(appDatabaseProvider.future),
+        invalidateDatabase: () => ref.invalidate(appDatabaseProvider),
+      );
 
       final service = await ref.read(backupServiceProvider.future);
       final preview = await service.inspect(
-          nkbFile: File(path), password: passwordC.text);
+        nkbFile: File(path),
+        password: passwordC.text,
+      );
 
       counts = preview.recordCounts;
       createdAt = preview.createdAtIso;
@@ -164,20 +178,25 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Restore selesai'),
           content: Text(
-              'Dibuat: ${createdAt ?? '-'}\n'
-              'Produk: ${counts?['products'] ?? '-'}\n'
-              'Pelanggan: ${counts?['customers'] ?? '-'}\n'
-              'Nota: ${counts?['sales'] ?? '-'}\n\n'
-              'Aplikasi memuat ulang data otomatis.'),
+            'Dibuat: ${createdAt ?? '-'}\n'
+            'Produk: ${counts?['products'] ?? '-'}\n'
+            'Pelanggan: ${counts?['customers'] ?? '-'}\n'
+            'Nota: ${counts?['sales'] ?? '-'}\n\n'
+            'Aplikasi memuat ulang data otomatis.',
+          ),
           actions: [
-            FilledButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
           ],
         ),
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Gagal restore: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal restore: $e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -188,37 +207,41 @@ class _DataScreenState extends ConsumerState<DataScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Backup & Restore')),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.backup_outlined),
-            title: const Text('Backup Sekarang'),
-            subtitle: const Text('Buat file .nkb terenkripsi'),
-            trailing: _busy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.chevron_right),
-            onTap: _busy ? null : _backupNow,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.backup_outlined),
+              title: const Text('Backup Sekarang'),
+              subtitle: const Text('Buat file .nkb terenkripsi'),
+              trailing: _busy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _busy ? null : _backupNow,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.restore_outlined),
-            title: const Text('Pulihkan dari .nkb'),
-            subtitle: const Text('Preview dulu sebelum menimpa data'),
-            onTap: _busy ? null : _restore,
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.restore_outlined),
+              title: const Text('Pulihkan dari .nkb'),
+              subtitle: const Text('Preview dulu sebelum menimpa data'),
+              onTap: _busy ? null : _restore,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'File .nkb terenkripsi (AES-256-GCM + PBKDF2). Tanpa password, '
-          'isi tidak bisa dibuka siapa pun termasuk NotaKit.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-      ]),
+          const SizedBox(height: 16),
+          Text(
+            'File .nkb terenkripsi (AES-256-GCM + PBKDF2). Tanpa password, '
+            'isi tidak bisa dibuka siapa pun termasuk NotaKit.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
     );
   }
 }

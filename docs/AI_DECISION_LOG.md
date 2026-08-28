@@ -261,6 +261,23 @@ lib/
 | — | Merge langsung PURCHASE_PAYMENT→PAYMENT tanpa evaluasi | Ditunda oleh D-007 |
 | — | Isar/Hive sebagai DB utama | Tidak relational; D-006 |
 
+## D-025 — Recovery gate: void finansial dibatasi sampai reversal tersedia
+
+**Status:** diterapkan pada recovery MVP (2026-08-28).
+
+**Decision:** `voidSale()` menolak sale yang sudah memiliki payment atau
+receivable dengan typed failure sebelum mengubah stok atau status. Refund,
+reversal ledger, dan pembatalan receivable penuh tidak boleh disimulasikan
+dengan perubahan parsial.
+
+**Reason:** Model receivable saat ini belum memiliki status `voided/cancelled`
+dan flow refund belum tersedia. Guard eksplisit mempertahankan invariant bahwa
+saldo account, ledger, payment, receivable, dan stok tidak boleh berbeda setelah
+operasi void.
+
+**Consequence:** Void hanya aman untuk sale tanpa efek finansial. Implementasi
+refund/return lengkap tetap menjadi gate sebelum kebijakan void dapat diperluas.
+
 ---
 
 ## D-019 — Implementasi D-003: sqlite3mc via build-hook package:sqlite3 v3

@@ -201,11 +201,11 @@ sebagai regression MVP:
 
 ## 10. Status verifikasi
 
-Commit history menunjukkan milestone sebelumnya pernah menjalankan analyzer,
-test, APK build, dan integration test. Namun pada audit ini rerun `flutter
-analyze` dan `flutter test` ditolak oleh permission environment, sehingga status
-tersebut harus disebut **pernah pass**, bukan **diverifikasi ulang sekarang**.
-Integration test dan debug build juga belum dapat dieksekusi ulang pada sesi ini.
+Pada recovery pass ini `flutter analyze`, `flutter test`, dan
+`flutter build apk --debug` sudah dijalankan dan lulus pada environment ini.
+Integration test Android belum dapat dijalankan karena tidak ada device/emulator
+yang tersedia. Catatan milestone lama tetap diklasifikasikan sebagai **PASS
+FROM PREVIOUS EXECUTION LOG** kecuali hasil yang disebut sebagai verifikasi kini.
 
 ## 11. Prioritas recovery
 
@@ -220,3 +220,32 @@ Integration test dan debug build juga belum dapat dieksekusi ulang pada sesi ini
 6. **P2:** rapikan error taxonomy, UX states, benchmark, dan README.
 7. **Deferred:** jangan mulai Phase 2 sebelum seluruh P0 selesai dan diverifikasi
    ulang.
+
+## 12. Recovery pass — status verifikasi saat ini
+
+Recovery milestone ini memperbaiki dan memverifikasi:
+
+- **PASS VERIFIED NOW:** onboarding restore branch memakai nilai radio yang
+  benar; regression widget test berjalan dengan fake file picker.
+- **PASS VERIFIED NOW:** checkout menolak pembayaran negatif/overpayment dan
+  menolak saldo terutang tanpa customer sebelum row database dibuat.
+- **PASS VERIFIED NOW:** void yang memiliki payment atau receivable ditolak
+  dengan typed failure sebelum stok atau status berubah. Refund/reversal penuh
+  tetap menjadi requirement lanjutan; pembatasan ini menjaga invariant MVP.
+- **PASS VERIFIED NOW:** encrypted payload backup yang terlalu pendek ditolak
+  sebagai format invalid, dan snapshot temporary dibersihkan.
+- **PASS VERIFIED NOW:** restore memindahkan database lama ke file recovery
+  sebelum memasang staging, dengan rollback jika pemasangan gagal.
+- **PASS VERIFIED NOW:** onboarding dan DataScreen menunggu database ditutup
+  sebelum replacement.
+- **PASS VERIFIED NOW:** `flutter analyze` dan `flutter test` pada environment
+  ini lulus setelah recovery fix.
+
+**Belum terverifikasi sekarang:** debug APK build dan integration test Android.
+Statusnya tetap **PASS FROM PREVIOUS EXECUTION LOG** sampai dapat dijalankan pada
+environment Android yang sesuai.
+
+P0 restore, credit ownership, dan silent invalid payment sudah ditutup. P0
+financial reversal ditutup dengan guard eksplisit, bukan dengan klaim bahwa
+refund sudah tersedia. MVP belum boleh masuk Phase 2 sampai flow return/refund
+atau kebijakan void yang lebih lengkap diputuskan dan diuji.

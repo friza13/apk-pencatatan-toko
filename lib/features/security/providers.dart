@@ -11,8 +11,9 @@ import '../../core/security/secure_store.dart';
 import '../../database/app_database.dart';
 
 /// PIN hashing strategy; widget tests override with cheap iterations.
-final Provider<PinHasher> pinHasherProvider =
-    Provider<PinHasher>((ref) => const PinHasher());
+final Provider<PinHasher> pinHasherProvider = Provider<PinHasher>(
+  (ref) => const PinHasher(),
+);
 
 /// Production [SecureStore] backed by flutter_secure_storage
 /// (Android Keystore-wrapped).
@@ -44,8 +45,8 @@ class FlutterSecureStoreAdapter implements SecureStore {
 /// Production biometric gate backed by local_auth.
 final Provider<BiometricAuthenticator> biometricAuthProvider =
     Provider<BiometricAuthenticator>((ref) {
-  return LocalAuthAdapter(LocalAuthentication());
-});
+      return LocalAuthAdapter(LocalAuthentication());
+    });
 
 class LocalAuthAdapter implements BiometricAuthenticator {
   LocalAuthAdapter(this._auth);
@@ -65,27 +66,37 @@ class LocalAuthAdapter implements BiometricAuthenticator {
 /// first launch (D-022). Key lives in secure storage, never in code.
 final FutureProvider<AppDatabase> appDatabaseProvider =
     FutureProvider<AppDatabase>((ref) async {
-  final docs = await getApplicationDocumentsDirectory();
-  final file = File('${docs.path}/notakit.db');
+      final docs = await getApplicationDocumentsDirectory();
+      final file = File('${docs.path}/notakit.db');
 
-  final secure = ref.watch(secureStoreProvider);
-  var passphrase = await secure.read('nk.db.key');
-  if (passphrase == null || passphrase.isEmpty) {
-    passphrase = _randomKey();
-    await secure.write('nk.db.key', passphrase);
-  }
+      final secure = ref.watch(secureStoreProvider);
+      var passphrase = await secure.read('nk.db.key');
+      if (passphrase == null || passphrase.isEmpty) {
+        passphrase = _randomKey();
+        await secure.write('nk.db.key', passphrase);
+      }
 
-  final db = AppDatabase(openEncryptedExecutor(
-    file: file,
-    passphrase: passphrase,
-  ));
-  ref.onDispose(db.close);
-  return db;
-});
+      final db = AppDatabase(
+        openEncryptedExecutor(file: file, passphrase: passphrase),
+      );
+      ref.onDispose(db.close);
+      return db;
+    });
+
+/// Closes the active database before an on-disk replacement.
+Future<void> closeAppDatabaseForRestore({
+  required Future<AppDatabase> Function() readDatabase,
+  required void Function() invalidateDatabase,
+}) async {
+  final db = await readDatabase();
+  await db.close();
+  invalidateDatabase();
+}
 
 String _randomKey() {
   final rng = Random.secure();
-  return List<int>.generate(32, (_) => rng.nextInt(256))
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  return List<int>.generate(
+    32,
+    (_) => rng.nextInt(256),
+  ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
