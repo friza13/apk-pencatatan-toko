@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../../core/app/app_metadata.dart';
 import '../../products/controllers/products_providers.dart';
 import '../../security/providers.dart';
 import '../controllers/backup_providers.dart';
@@ -82,12 +83,13 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       final service = await ref.read(backupServiceProvider.future);
       final docs = await getDocsDir();
       final db = await ref.read(appDatabaseProvider.future);
+      final metadata = await AppMetadata.load(db);
       final file = await service.createBackup(
         sourceDbPath: '$docs/notakit.db',
         saveToPath: '$docs/notakit-${_stamp()}.nkb',
         password: password,
-        schemaVersion: db.schemaVersion,
-        appVersion: '1.0.0-dev',
+        schemaVersion: metadata.schemaVersion,
+        appVersion: metadata.appVersion,
         recordCounts: counts,
         dbKeyHex: await readDbKeyHex(),
         dbPassphrase: await readDbKeyHex(),
@@ -149,12 +151,6 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
     setState(() => _busy = true);
     try {
-      // Tutup koneksi aktif agar file bisa ditimpa aman.
-      await closeAppDatabaseForRestore(
-        readDatabase: () => ref.read(appDatabaseProvider.future),
-        invalidateDatabase: () => ref.invalidate(appDatabaseProvider),
-      );
-
       final service = await ref.read(backupServiceProvider.future);
       final preview = await service.inspect(
         nkbFile: File(path),
@@ -163,6 +159,37 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
       counts = preview.recordCounts;
       createdAt = preview.createdAtIso;
+      if (!mounted) return;
+      final apply = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Konfirmasi restore'),
+          content: Text(
+            'Backup dibuat: ${createdAt ?? '-'}\n'
+            'Produk: ${counts?['products'] ?? '-'}\n'
+            'Pelanggan: ${counts?['customers'] ?? '-'}\n'
+            'Nota: ${counts?['sales'] ?? '-'}\n\n'
+            'Data saat ini akan diganti secara permanen.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ganti Data'),
+            ),
+          ],
+        ),
+      );
+      if (apply != true || !mounted) return;
+
+      // Tutup koneksi aktif hanya after preview confirmation.
+      await closeAppDatabaseForRestore(
+        readDatabase: () => ref.read(appDatabaseProvider.future),
+        invalidateDatabase: () => ref.invalidate(appDatabaseProvider),
+      );
 
       final docs = await getDocsDir();
       await service.applyRestore(

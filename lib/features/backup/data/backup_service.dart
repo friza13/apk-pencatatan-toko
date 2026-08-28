@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:drift/native.dart';
 
 import '../../../database/app_database.dart';
 import 'backup_crypto.dart';
@@ -169,14 +168,7 @@ class BackupService {
     await staging.writeAsBytes(preview.databaseBytes, flush: true);
 
     final probe = AppDatabase(
-      NativeDatabase(
-        File(staging.path),
-        // Passphrase kosong = database plain (unit test); produksi selalu
-        // mengirim kunci sqlcipher dari secure storage.
-        setup: dbPassphrase.isEmpty
-            ? null
-            : (rawDb) => rawDb.execute("PRAGMA key = '$dbPassphrase'"),
-      ),
+      openEncryptedExecutor(file: staging, passphrase: dbPassphrase),
     );
     try {
       final okRow = await probe

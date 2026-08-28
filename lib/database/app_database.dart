@@ -94,6 +94,9 @@ QueryExecutor openEncryptedExecutor({
   required File file,
   required String passphrase,
 }) {
+  if (passphrase.isEmpty) {
+    return NativeDatabase.createInBackground(file);
+  }
   return NativeDatabase.createInBackground(
     file,
     setup: (rawDb) => _setupEncrypted(rawDb, passphrase),
