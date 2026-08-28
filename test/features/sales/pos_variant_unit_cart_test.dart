@@ -221,6 +221,7 @@ void main() {
       expect(find.text('Nota tersimpan'), findsOneWidget);
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
+      expect(find.text('Nota tersimpan'), findsNothing);
 
       // Check DB sale lines
       final saleLines = await db.select(db.saleLines).get();

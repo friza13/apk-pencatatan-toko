@@ -131,7 +131,7 @@ class SaleDetailScreen extends ConsumerWidget {
     final reasonC = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Void Nota?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -149,11 +149,11 @@ class SaleDetailScreen extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogCtx, false),
             child: const Text('Batal'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             child: const Text('Void'),
           ),
         ],

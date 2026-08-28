@@ -337,7 +337,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
       if (!mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('Nota tersimpan'),
           content: Text(
             'Nomor: ${out.number}\nTotal: ${formatMinor(out.grandTotalMinor)}'
@@ -345,7 +345,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
           ),
           actions: [
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogCtx).pop(),
               child: const Text('OK'),
             ),
           ],
