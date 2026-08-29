@@ -12,6 +12,7 @@ import '../../security/providers.dart';
 import '../controllers/sales_providers.dart';
 import '../data/sales_service.dart';
 import '../../products/data/product_repository.dart';
+import 'widgets/barcode_scanner_listener.dart';
 
 /// Buat Nota — the money screen (DESAIN §11-12). One tap adds a product.
 class NewSaleScreen extends ConsumerStatefulWidget {
@@ -46,6 +47,38 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
       _results = items;
       _searching = false;
     });
+  }
+
+  Future<void> _handleBarcodeScanned(String barcode) async {
+    final business = await ref.read(currentBusinessProvider.future);
+    final repo = await ref.read(productRepositoryProvider.future);
+    final items = await repo.search(
+      businessId: business.id,
+      query: barcode,
+      filter: ProductFilter.active,
+    );
+    if (!mounted) return;
+    if (items.isNotEmpty) {
+      final p = items.first;
+      await _onSelectProduct(p);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ditambahkan: ${p.name}'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barcode "$barcode" tidak ditemukan.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _onSelectProduct(Product p) async {
@@ -262,6 +295,31 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                 ),
               ),
               const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  ActionChip(
+                    label: const Text('Uang Pas'),
+                    onPressed: () {
+                      if (resolvedTotal != null) {
+                        paidC.text = '$resolvedTotal';
+                        setSheetState(() {});
+                      }
+                    },
+                  ),
+                  for (final amount in [10000, 20000, 50000, 100000])
+                    if ((resolvedTotal ?? 0) <= amount)
+                      ActionChip(
+                        label: Text(formatMinor(amount)),
+                        onPressed: () {
+                          paidC.text = '$amount';
+                          setSheetState(() {});
+                        },
+                      ),
+                ],
+              ),
+              const SizedBox(height: 8),
               Text(
                 'Kurang dari total akan dicatat sebagai piutang.',
                 style: Theme.of(sheetContext).textTheme.bodySmall,
@@ -365,96 +423,99 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     final cart = ref.watch(cartProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Nota')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: TextField(
-              controller: _search,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Cari produk untuk ditambahkan...',
-                prefixIcon: Icon(Icons.search),
+      body: BarcodeScannerListener(
+        onBarcodeScanned: _handleBarcodeScanned,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: TextField(
+                controller: _search,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Cari produk untuk ditambahkan...',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onSubmitted: _runSearch,
+                onChanged: (v) {
+                  if (v.length >= 2) _runSearch(v);
+                },
               ),
-              onSubmitted: _runSearch,
-              onChanged: (v) {
-                if (v.length >= 2) _runSearch(v);
-              },
             ),
-          ),
-          if (_searching) const LinearProgressIndicator(minHeight: 2),
-          if (_results.isNotEmpty)
-            Container(
-              constraints: const BoxConstraints(maxHeight: 220),
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  for (final p in _results)
-                    ListTile(
-                      dense: true,
-                      title: Text(p.name),
-                      subtitle: Text(formatMinor(p.salePriceMinor)),
-                      trailing: Icon(
-                        Icons.add_circle_outline,
-                        color: Theme.of(context).colorScheme.primary,
+            if (_searching) const LinearProgressIndicator(minHeight: 2),
+            if (_results.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final p in _results)
+                      ListTile(
+                        dense: true,
+                        title: Text(p.name),
+                        subtitle: Text(formatMinor(p.salePriceMinor)),
+                        trailing: Icon(
+                          Icons.add_circle_outline,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        onTap: () => _onSelectProduct(p),
                       ),
-                      onTap: () => _onSelectProduct(p),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          const Divider(height: 1),
-          Expanded(
-            child: cart.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+            const Divider(height: 1),
+            Expanded(
+              child: cart.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: 56,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Cari produk di atas,\nlalu ketuk untuk menambah.',
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView(
                       children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 56,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Cari produk di atas,\nlalu ketuk untuk menambah.',
-                        ),
+                        for (final l in cart.lines)
+                          ListTile(
+                            title: Text(l.displayName),
+                            subtitle: Text(
+                              '${microToDecimalString(l.qtyMicro)} x '
+                              '${formatMinor(l.unitPriceMinor)}'
+                              '${l.tracked ? '' : ' (jasa)'}',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: () => ref
+                                      .read(cartProvider.notifier)
+                                      .decrementByKey(l.cartKey),
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Text(microToDecimalString(l.qtyMicro)),
+                                IconButton(
+                                  onPressed: () => ref
+                                      .read(cartProvider.notifier)
+                                      .incrementByKey(l.cartKey),
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
-                  )
-                : ListView(
-                    children: [
-                      for (final l in cart.lines)
-                        ListTile(
-                          title: Text(l.displayName),
-                          subtitle: Text(
-                            '${microToDecimalString(l.qtyMicro)} x '
-                            '${formatMinor(l.unitPriceMinor)}'
-                            '${l.tracked ? '' : ' (jasa)'}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                onPressed: () => ref
-                                    .read(cartProvider.notifier)
-                                    .decrementByKey(l.cartKey),
-                                icon: const Icon(Icons.remove_circle_outline),
-                              ),
-                              Text(microToDecimalString(l.qtyMicro)),
-                              IconButton(
-                                onPressed: () => ref
-                                    .read(cartProvider.notifier)
-                                    .incrementByKey(l.cartKey),
-                                icon: const Icon(Icons.add_circle_outline),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
