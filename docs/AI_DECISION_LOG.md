@@ -459,3 +459,24 @@ tetap menjadi backlog, sedangkan fitur Phase 2/3 tetap deferred.
 
 **Consequences:** Seluruh mutasi stok tetap tercatat 100% pada immutable ledger `stock_movements`. Form produk dan layar detail menjadi jauh lebih intuitif dan terintegrasi.
 
+---
+
+## D-030 — Minimarket Fast Cashier, Hardware Thermal Receipt, Purchase WAC & Encrypted Cloud Backup (P12)
+
+**Context:** Implementasi Phase 2 untuk operasional toko fisik minimarket dan kelontong membutuhkan:
+1. Desain struk thermal profesional 2-baris sesuai format standar toko/grosir (*Puri Abadi*), dilengkapi total item, tanda tangan/stempel, dan QR nota.
+2. Dukungan langsung hardware printer thermal Bluetooth & USB (ESC/POS) dengan fallback cetak PDF vektor tajam.
+3. Kasir cepat dengan HID Barcode Scanner buffer listener dan tombol saran uang pas (*quick cash*).
+4. Alur pembelian / kulakan barang masuk dengan update otomatis HPP/modal menggunakan metode *Weighted Average Cost* (WAC).
+5. Integrasi pencadangan dan pemulihan cloud terenkripsi (AES-256-GCM + PBKDF2) ke Google Drive.
+
+**Decision:**
+1. Mengembangkan canonical model `ReceiptConfig` dan `ReceiptDocument` yang merender format 2-baris (`[Nama Produk] -> [Total]`, baris kedua `[Qty] [Satuan] X [Harga]`), total item, kotak stempel, dan dynamic QR code.
+2. Mengembangkan `EscPosBuilder` dan `PrinterAdapter` untuk mencetak raw byte streams ESC/POS (58mm/80mm) langsung ke printer thermal dengan pemotong kertas otomatis.
+3. Mengembangkan `BarcodeScannerListener` untuk menangkap input scanner barcode HID dan `ActionChip` quick cash nominal tunai pada `NewSaleScreen`.
+4. Mengembangkan `PurchaseService` untuk mencatat transaksi kulakan masuk, menambah saldo stok barang, menghitung HPP WAC baru, dan mencatat hutang tempo supplier.
+5. Menyediakan adapter `GoogleDriveBackupService` pada `DataScreen` untuk sinkronisasi backup `.nkb` terenkripsi ke Google Drive.
+6. Menghapus sepenuhnya mode khusus F&B/Restoran/Kafe dari lingkup aplikasi sesuai arahan pemilik toko.
+
+**Consequences:** NotaKit sepenuhnya siap untuk operasional minimarket, kelontong, dan toko grosir dengan performa tinggi, pencatatan HPP akurat, dan dukungan perangkat keras kasir lengkap.
+
