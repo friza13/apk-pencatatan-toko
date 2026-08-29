@@ -15,7 +15,7 @@ class PurchasesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pembelian & Kulakan'),
+        title: const Text('Pembelian Stok (Supplier)'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),

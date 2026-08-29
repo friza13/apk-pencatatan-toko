@@ -51,7 +51,7 @@ class MoreMenuScreen extends StatelessWidget {
           ),
           _MenuTile(
             icon: Icons.shopping_bag_outlined,
-            label: 'Pembelian & Kulakan',
+            label: 'Pembelian Stok (Supplier)',
             onTap: () => context.push('/more/purchases'),
           ),
           const _SectionHeader('Toko'),
@@ -66,8 +66,8 @@ class MoreMenuScreen extends StatelessWidget {
             onTap: () => context.push('/more/printer'),
           ),
           _MenuTile(
-            icon: Icons.backup_outlined,
-            label: 'Backup & Restore',
+            icon: Icons.cloud_sync_outlined,
+            label: 'Backup Data & Google Drive',
             onTap: () => context.push('/more/data'),
           ),
           _MenuTile(
