@@ -1,3 +1,5 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 /// Configuration options for receipt rendering across text, ESC/POS, and PDF.
 class ReceiptConfig {
   const ReceiptConfig({
@@ -76,3 +78,23 @@ class ReceiptConfig {
     qrPayload,
   );
 }
+
+class ReceiptConfigNotifier extends Notifier<ReceiptConfig> {
+  @override
+  ReceiptConfig build() => const ReceiptConfig();
+
+  void update(ReceiptConfig config) => state = config;
+
+  void toggleTagline(bool v) => state = state.copyWith(showTagline: v);
+  void toggleOperator(bool v) => state = state.copyWith(showOperator: v);
+  void toggleItemCount(bool v) => state = state.copyWith(showItemCount: v);
+  void toggleSignature(bool v) => state = state.copyWith(showSignature: v);
+  void toggleQr(bool v) => state = state.copyWith(showQr: v);
+  void setCustomFooter(String footer) =>
+      state = state.copyWith(customFooter: footer);
+}
+
+final receiptConfigProvider =
+    NotifierProvider<ReceiptConfigNotifier, ReceiptConfig>(
+      ReceiptConfigNotifier.new,
+    );

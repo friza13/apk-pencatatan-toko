@@ -62,6 +62,7 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
       dueMinor: widget.sale.dueTotalMinor,
       paymentLabel: widget.paymentLabel,
       footerNote: widget.footerNote,
+      config: ref.read(receiptConfigProvider),
     );
   }
 

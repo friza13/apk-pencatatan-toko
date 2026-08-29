@@ -19,6 +19,7 @@ import '../../features/sales/presentation/sales_screen.dart';
 import '../../features/purchases/presentation/purchases_screen.dart';
 import '../../features/purchases/presentation/purchase_form_screen.dart';
 import '../../features/printing/presentation/printer_settings_screen.dart';
+import '../../features/printing/presentation/receipt_settings_screen.dart';
 import '../../features/settings/more_menu_screen.dart';
 import '../../features/settings/presentation/references_screen.dart';
 import '../../features/settings/presentation/store_profile_screen.dart';
@@ -153,6 +154,10 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'purchases',
                   builder: (context, state) => const PurchasesScreen(),
+                ),
+                GoRoute(
+                  path: 'receipt_settings',
+                  builder: (context, state) => const ReceiptSettingsScreen(),
                 ),
                 GoRoute(
                   path: 'printer',
