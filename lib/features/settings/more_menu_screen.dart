@@ -49,6 +49,11 @@ class MoreMenuScreen extends StatelessWidget {
             label: 'Stok (stok awal & penyesuaian)',
             onTap: () => context.push('/more/stock'),
           ),
+          _MenuTile(
+            icon: Icons.shopping_bag_outlined,
+            label: 'Pembelian & Kulakan',
+            onTap: () => context.push('/more/purchases'),
+          ),
           const _SectionHeader('Toko'),
           _MenuTile(
             icon: Icons.print_outlined,
