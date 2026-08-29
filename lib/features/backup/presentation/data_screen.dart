@@ -21,7 +21,7 @@ class DataScreen extends ConsumerStatefulWidget {
 }
 
 class _DataScreenState extends ConsumerState<DataScreen> {
-  bool _busy = false;
+  String? _busyAction;
 
   String _stamp() {
     final d = DateTime.now().toLocal();
@@ -73,7 +73,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       return;
     }
 
-    setState(() => _busy = true);
+    setState(() => _busyAction = 'local_backup');
     try {
       final business = await ref.read(currentBusinessProvider.future);
       final repo = await ref.read(productRepositoryProvider.future);
@@ -106,7 +106,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _busyAction = null);
     }
   }
 
@@ -150,7 +150,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() => _busyAction = 'local_restore');
     try {
       final service = await ref.read(backupServiceProvider.future);
       final preview = await service.inspect(
@@ -185,6 +185,8 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         ),
       );
       if (apply != true || !mounted) return;
+
+      setState(() => _busyAction = 'local_restore');
 
       // Tutup koneksi aktif hanya after preview confirmation.
       await closeAppDatabaseForRestore(
@@ -231,7 +233,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         ).showSnackBar(SnackBar(content: Text('Gagal restore: $e')));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _busyAction = null);
     }
   }
 
@@ -278,7 +280,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
       return;
     }
 
-    setState(() => _busy = true);
+    setState(() => _busyAction = 'gdrive_backup');
     try {
       final business = await ref.read(currentBusinessProvider.future);
       final repo = await ref.read(productRepositoryProvider.future);
@@ -317,12 +319,12 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _busyAction = null);
     }
   }
 
   Future<void> _restoreFromGoogleDrive() async {
-    setState(() => _busy = true);
+    setState(() => _busyAction = 'gdrive_restore');
     List<DriveBackupInfo> backups = [];
     try {
       final gdrive = ref.read(googleDriveBackupServiceProvider);
@@ -333,10 +335,10 @@ class _DataScreenState extends ConsumerState<DataScreen> {
           SnackBar(content: Text('Gagal memuat backup Google Drive: $e')),
         );
       }
-      setState(() => _busy = false);
+      setState(() => _busyAction = null);
       return;
     } finally {
-      setState(() => _busy = false);
+      setState(() => _busyAction = null);
     }
 
     if (!mounted) return;
@@ -384,7 +386,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
 
     if (selected == null || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() => _busyAction = 'gdrive_restore');
     try {
       final gdrive = ref.read(googleDriveBackupServiceProvider);
       final tempDir = await Directory.systemTemp.createTemp('gdrive_restore_');
@@ -402,7 +404,7 @@ class _DataScreenState extends ConsumerState<DataScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _busyAction = null);
     }
   }
 
@@ -417,15 +419,15 @@ class _DataScreenState extends ConsumerState<DataScreen> {
             child: ListTile(
               leading: const Icon(Icons.backup_outlined),
               title: const Text('Backup Sekarang'),
-              subtitle: const Text('Buat file .nkb terenkripsi'),
-              trailing: _busy
+              subtitle: const Text('Buat file .nkb terenkripsi lokal'),
+              trailing: _busyAction == 'local_backup'
                   ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.chevron_right),
-              onTap: _busy ? null : _backupNow,
+              onTap: _busyAction != null ? null : _backupNow,
             ),
           ),
           const SizedBox(height: 8),
@@ -434,7 +436,14 @@ class _DataScreenState extends ConsumerState<DataScreen> {
               leading: const Icon(Icons.restore_outlined),
               title: const Text('Pulihkan dari .nkb'),
               subtitle: const Text('Preview dulu sebelum menimpa data'),
-              onTap: _busy ? null : _restore,
+              trailing: _busyAction == 'local_restore'
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _busyAction != null ? null : _restore,
             ),
           ),
           Card(
@@ -442,7 +451,14 @@ class _DataScreenState extends ConsumerState<DataScreen> {
               leading: const Icon(Icons.cloud_upload_outlined),
               title: const Text('Cadangkan ke Google Drive'),
               subtitle: const Text('Simpan file .nkb terenkripsi ke Cloud'),
-              onTap: _busy ? null : _backupToGoogleDrive,
+              trailing: _busyAction == 'gdrive_backup'
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _busyAction != null ? null : _backupToGoogleDrive,
             ),
           ),
           const SizedBox(height: 8),
@@ -451,7 +467,14 @@ class _DataScreenState extends ConsumerState<DataScreen> {
               leading: const Icon(Icons.cloud_download_outlined),
               title: const Text('Pulihkan dari Google Drive'),
               subtitle: const Text('Unduh dan pulihkan data dari Google Drive'),
-              onTap: _busy ? null : _restoreFromGoogleDrive,
+              trailing: _busyAction == 'gdrive_restore'
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.chevron_right),
+              onTap: _busyAction != null ? null : _restoreFromGoogleDrive,
             ),
           ),
           const SizedBox(height: 16),
