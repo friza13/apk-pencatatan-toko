@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../backup/controllers/backup_providers.dart';
+import '../backup/data/google_drive_backup_service.dart';
 import '../security/auth_controller.dart';
 import '../security/auth_repository.dart';
 import '../security/providers.dart';
@@ -169,6 +170,175 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  Future<void> _importFromGoogleDrive() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+
+    List<DriveBackupInfo> backups = [];
+    try {
+      final gdrive = ref.read(googleDriveBackupServiceProvider);
+      backups = await gdrive.listBackups();
+    } catch (e) {
+      setState(() {
+        _busy = false;
+        _error = 'Gagal memuat backup Google Drive: $e';
+      });
+      return;
+    } finally {
+      setState(() => _busy = false);
+    }
+
+    if (!mounted) return;
+    if (backups.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Belum ada file backup di Google Drive.')),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<DriveBackupInfo>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Pilih Backup dari Google Drive',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final b in backups)
+                      ListTile(
+                        leading: const Icon(Icons.cloud_done_outlined),
+                        title: Text(b.name),
+                        subtitle: Text(
+                          'Ukuran: ${b.sizeBytes} bytes • ${b.modifiedTime.toLocal()}',
+                        ),
+                        onTap: () => Navigator.pop(ctx, b),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+
+    final passwordC = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Password backup'),
+        content: TextField(
+          controller: passwordC,
+          obscureText: true,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Password enkripsi'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Pulihkan'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+
+    try {
+      final gdrive = ref.read(googleDriveBackupServiceProvider);
+      final tempDir = await Directory.systemTemp.createTemp('gdrive_restore_');
+      final targetFile = File('${tempDir.path}/${selected.name}');
+      await gdrive.downloadBackup(selected.id, targetFile.path);
+
+      final service = await ref.read(backupServiceProvider.future);
+      final preview = await service.inspect(
+        nkbFile: targetFile,
+        password: passwordC.text,
+      );
+
+      await closeAppDatabaseForRestore(
+        readDatabase: () => ref.read(appDatabaseProvider.future),
+        invalidateDatabase: () => ref.invalidate(appDatabaseProvider),
+      );
+
+      final docs = await getDocsDir();
+      await service.applyRestore(
+        preview: preview,
+        targetDbPath: '$docs/notakit.db',
+        dbPassphrase: preview.dbKeyHex,
+      );
+
+      final secure = ref.read(secureStoreProvider);
+      await secure.write('nk.db.key', preview.dbKeyHex);
+
+      ref.invalidate(appDatabaseProvider);
+      final repo = AuthRepository(
+        db: await ref.read(appDatabaseProvider.future),
+        secureStore: secure,
+      );
+      if (!mounted) return;
+      final pinC = TextEditingController();
+      final pinSaved = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Buat PIN baru'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Data berhasil dipulihkan. Buat PIN baru untuk perangkat ini.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pinC,
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: const InputDecoration(labelText: 'PIN (6 digit)'),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      );
+      if (pinSaved != true || !mounted) return;
+      await repo.setPin(pinC.text);
+
+      ref.invalidate(authControllerProvider);
+    } catch (e) {
+      setState(() {
+        _busy = false;
+        _error = e.toString();
+      });
+    }
+  }
+
   Future<void> _finish() async {
     setState(() {
       _busy = true;
@@ -231,9 +401,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (_step < 2) {
       // Pilihan "Pulihkan dari backup" langsung menjalankan import
       // dan melewati step PIN (PIN baru diminta setelah restore).
-      if (_step == 1 && _dataChoice == 1) {
-        _importBackup();
-        return;
+      if (_step == 1) {
+        if (_dataChoice == 1) {
+          _importBackup();
+          return;
+        } else if (_dataChoice == 2) {
+          _importFromGoogleDrive();
+          return;
+        }
       }
       setState(() => _step++);
     } else {
@@ -279,9 +454,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 ),
                 RadioListTile<int>(
                   value: 1,
-                  title: const Text('Pulihkan dari file backup'),
+                  title: const Text('Pulihkan dari file backup (.nkb)'),
                   subtitle: const Text(
-                    'Pindahkan data dari HP lama lewat file .nkb.',
+                    'Pindahkan data dari file backup lokal.',
+                  ),
+                ),
+                RadioListTile<int>(
+                  value: 2,
+                  title: const Text('Pulihkan dari Google Drive'),
+                  subtitle: const Text(
+                    'Unduh dan pulihkan data dari Google Drive Cloud.',
                   ),
                 ),
               ],
