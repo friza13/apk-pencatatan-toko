@@ -35,20 +35,19 @@ class PrintSheet extends ConsumerStatefulWidget {
 class _PrintSheetState extends ConsumerState<PrintSheet> {
   bool _is80 = false;
 
-  String get _text {
-    final r = ReceiptTextRenderer(widthChars: _is80 ? 48 : 32);
-    return r.render(
+  ReceiptDocument get _document {
+    return ReceiptDocument(
       storeName: widget.storeName,
-      number: widget.sale.number ?? '-',
+      invoiceNumber: widget.sale.number ?? '-',
       dateTimeLocal: _fmt(widget.sale.createdAt.toLocal()),
       customerName: widget.customerName,
       lines: [
         for (final l in widget.lines)
-          ReceiptLine(
+          ReceiptItem(
             name: l.productNameSnapshot,
             qty: microToDecimalString(l.qtyBaseMicro),
-            priceMinor: l.unitPriceMinor,
-            totalMinor: l.lineTotalMinor,
+            unitPriceMinor: l.unitPriceMinor,
+            lineTotalMinor: l.lineTotalMinor,
           ),
       ],
       subtotalMinor: widget.sale.subtotalMinor,
@@ -64,6 +63,11 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
     );
   }
 
+  String get _text {
+    final r = ReceiptTextRenderer(widthChars: _is80 ? 48 : 32);
+    return r.renderDocument(_document);
+  }
+
   String _fmt(DateTime local) {
     String two(int v) => v.toString().padLeft(2, '0');
     return '${two(local.day)}/${two(local.month)}/${local.year} '
@@ -71,7 +75,7 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
   }
 
   Future<Uint8List> _buildPdfBytes() async {
-    final bytes = await ReceiptPdf.build(text: _text, is80mm: _is80);
+    final bytes = await ReceiptPdf.build(document: _document, is80mm: _is80);
     return Uint8List.fromList(bytes);
   }
 
