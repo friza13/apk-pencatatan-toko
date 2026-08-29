@@ -6,6 +6,8 @@ import 'package:printing/printing.dart';
 
 import '../../../core/units/quantity.dart';
 import '../../../database/app_database.dart';
+import '../data/esc_pos_builder.dart';
+import '../data/printer_adapter.dart';
 import '../data/receipt_pdf.dart';
 import '../data/receipt_text_renderer.dart';
 
@@ -90,6 +92,25 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
 
   Future<void> _print() async {
     final messenger = ScaffoldMessenger.of(context);
+    final adapter = ref.read(printerAdapterProvider);
+
+    if (adapter.isConnected) {
+      try {
+        final builder = EscPosBuilder(is80mm: _is80);
+        final bytes = builder.build(_document);
+        await adapter.printReceipt(bytes);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Nota berhasil dikirim ke printer!')),
+        );
+        if (mounted) Navigator.pop(context);
+        return;
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Gagal mencetak ke printer thermal: $e')),
+        );
+      }
+    }
+
     try {
       // Membuka dialog cetak sistem (pilih printer terpasang).
       await Printing.layoutPdf(onLayout: (_) => _buildPdfBytes());

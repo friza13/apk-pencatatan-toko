@@ -51,6 +51,11 @@ class MoreMenuScreen extends StatelessWidget {
           ),
           const _SectionHeader('Toko'),
           _MenuTile(
+            icon: Icons.print_outlined,
+            label: 'Printer Thermal',
+            onTap: () => context.push('/more/printer'),
+          ),
+          _MenuTile(
             icon: Icons.backup_outlined,
             label: 'Backup & Restore',
             onTap: () => context.push('/more/data'),

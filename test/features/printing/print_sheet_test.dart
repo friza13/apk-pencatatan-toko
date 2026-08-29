@@ -63,9 +63,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify preview text contains "1 x Rp25.000" and NOT "1000000 x Rp25.000"
-      expect(find.textContaining('1 x Rp25.000'), findsOneWidget);
-      expect(find.textContaining('1000000 x'), findsNothing);
+      // Verify preview text contains "1 X 25.000" and NOT "1000000"
+      expect(find.textContaining('1 X 25.000'), findsOneWidget);
+      expect(find.textContaining('1000000'), findsNothing);
     },
   );
 }
