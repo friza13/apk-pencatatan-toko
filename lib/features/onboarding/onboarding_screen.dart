@@ -367,30 +367,67 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Langkah ${_step + 1} dari 3',
-                style: theme.textTheme.labelLarge,
-              ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(value: (_step + 1) / 3),
-              const SizedBox(height: 24),
-              Expanded(child: _buildStep(theme)),
-              if (_error != null) ...[
-                Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+    return PopScope(
+      canPop: _step == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _step > 0 && !_busy) {
+          setState(() => _step--);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    if (_step > 0) ...[
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: _busy ? null : () => setState(() => _step--),
+                        tooltip: 'Kembali ke tahap sebelumnya',
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Expanded(
+                      child: Text(
+                        'Langkah ${_step + 1} dari 3',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
+                LinearProgressIndicator(value: (_step + 1) / 3),
+                const SizedBox(height: 24),
+                Expanded(child: _buildStep(theme)),
+                if (_error != null) ...[
+                  Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+                  const SizedBox(height: 8),
+                ],
+                Row(
+                  children: [
+                    if (_step > 0) ...[
+                      OutlinedButton(
+                        onPressed: _busy ? null : () => setState(() => _step--),
+                        child: const Text('Kembali'),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: (_canContinue && !_busy) ? _onContinue : null,
+                        child: Text(_step < 2 ? 'Lanjut' : 'Mulai dengan NotaKit'),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-              FilledButton(
-                onPressed: (_canContinue && !_busy) ? _onContinue : null,
-                child: Text(_step < 2 ? 'Lanjut' : 'Mulai dengan NotaKit'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

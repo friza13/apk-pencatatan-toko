@@ -104,6 +104,31 @@ void main() {
     expect(find.text('Mulai dari data kamu'), findsOneWidget);
   });
 
+  testWidgets('can navigate back to previous step during onboarding', (
+    tester,
+  ) async {
+    await _pumpFreshApp(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Nama kamu'), 'Budi');
+    await tester.pump();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nama usaha'),
+      'Toko Budi Jaya',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Lanjut'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mulai dari data kamu'), findsOneWidget);
+    expect(find.text('Kembali'), findsOneWidget);
+
+    // Pressing Kembali returns to step 1
+    await tester.tap(find.text('Kembali'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kenalkan toko kamu'), findsOneWidget);
+  });
+
   testWidgets('fresh install shows onboarding; completing it reaches Beranda', (
     tester,
   ) async {

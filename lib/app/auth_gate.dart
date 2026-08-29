@@ -53,11 +53,72 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      body: Center(
-        child: message == null
-            ? const CircularProgressIndicator()
-            : Padding(padding: const EdgeInsets.all(24), child: Text(message!)),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.store_outlined,
+                    size: 38,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'NotaKit',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Aplikasi Kasir & Pembukuan Toko',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                if (message == null) ...[
+                  SizedBox(
+                    width: 140,
+                    child: LinearProgressIndicator(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Menyiapkan data toko...',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ] else ...[
+                  Icon(
+                    Icons.error_outline,
+                    color: theme.colorScheme.error,
+                    size: 32,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

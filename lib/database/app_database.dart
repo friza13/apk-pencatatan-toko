@@ -146,6 +146,9 @@ void _setupEncrypted(sqlite3.Database rawDb, String passphrase) {
   rawDb
     ..execute("PRAGMA key = '${_escapeSqlString(passphrase)}'")
     ..execute('PRAGMA journal_mode = WAL')
+    ..execute('PRAGMA synchronous = NORMAL')
+    ..execute('PRAGMA cache_size = -2000')
+    ..execute('PRAGMA temp_store = MEMORY')
     // Forces real I/O: wrong key surfaces here as SQLITE_NOTADB.
     ..execute('SELECT count(*) FROM sqlite_master');
 }

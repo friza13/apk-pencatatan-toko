@@ -18,8 +18,6 @@ final Provider<PinHasher> pinHasherProvider = Provider<PinHasher>(
 /// Production [SecureStore] backed by flutter_secure_storage
 /// (Android Keystore-wrapped).
 final Provider<SecureStore> secureStoreProvider = Provider<SecureStore>((ref) {
-  // flutter_secure_storage v11 defaults to the strongest Android-backed
-  // storage (Keystore/EncryptedSharedPreferences successor).
   return FlutterSecureStoreAdapter(const FlutterSecureStorage());
 });
 
