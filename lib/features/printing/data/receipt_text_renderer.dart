@@ -46,8 +46,14 @@ class ReceiptTextRenderer {
 
     // 3. 2-Line Item Layout
     for (final l in doc.lines) {
-      // Line 1: Product & variant name -> Line subtotal (right-aligned)
-      b.writeln(_leftRight(l.name, money(l.lineTotalMinor)));
+      // Line 1: Product name & line subtotal (wraps cleanly if name is long)
+      final subtotal = money(l.lineTotalMinor);
+      if (l.name.length + subtotal.length + 1 <= widthChars) {
+        b.writeln(_leftRight(l.name, subtotal));
+      } else {
+        b.writeln(l.name);
+        b.writeln(_right(subtotal));
+      }
 
       // Line 2: [Qty] [Unit] X [UnitPrice] (e.g. 75 crt X 44.800)
       final unitPart =
@@ -186,6 +192,11 @@ class ReceiptTextRenderer {
     if (t.length >= widthChars) return t;
     final left = (widthChars - t.length) ~/ 2;
     return '${' ' * left}$t';
+  }
+
+  String _right(String text) {
+    if (text.length >= widthChars) return text;
+    return '${' ' * (widthChars - text.length)}$text';
   }
 
   String _truncate(String s) =>

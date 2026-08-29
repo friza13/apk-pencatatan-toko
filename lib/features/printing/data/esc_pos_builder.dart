@@ -59,11 +59,13 @@ class EscPosBuilder {
     // 4. 2-Line Items
     for (final item in document.lines) {
       _setBold(buffer, true);
-      _addLeftRight(
-        buffer,
-        item.name,
-        _money(item.lineTotalMinor, document.currencySymbol),
-      );
+      final priceStr = _money(item.lineTotalMinor, document.currencySymbol);
+      if (item.name.length + priceStr.length + 1 <= widthChars) {
+        _addLeftRight(buffer, item.name, priceStr);
+      } else {
+        buffer.add(latin1.encode('${item.name}\n'));
+        _addRight(buffer, priceStr);
+      }
       _setBold(buffer, false);
 
       final unitPart =
@@ -233,6 +235,15 @@ class EscPosBuilder {
   void _addDivider(BytesBuilder buffer) {
     _setAlign(buffer, 0);
     buffer.add(latin1.encode('${'-' * widthChars}\n'));
+  }
+
+  void _addRight(BytesBuilder buffer, String text) {
+    if (text.length >= widthChars) {
+      buffer.add(latin1.encode('$text\n'));
+      return;
+    }
+    final spaces = widthChars - text.length;
+    buffer.add(latin1.encode('${' ' * spaces}$text\n'));
   }
 
   void _addLeftRight(BytesBuilder buffer, String left, String right) {
