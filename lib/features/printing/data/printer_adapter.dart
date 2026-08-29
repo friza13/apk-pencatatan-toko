@@ -52,22 +52,13 @@ abstract class PrinterAdapter {
 
 /// In-memory mock adapter used for tests and fallback simulation.
 class MockPrinterAdapter implements PrinterAdapter {
+  MockPrinterAdapter({List<PrinterDevice>? mockDevices})
+      : mockDevices = mockDevices ?? const [];
+
   PrinterDevice? _connectedDevice;
   final List<Uint8List> printedPayloads = [];
 
-  final List<PrinterDevice> mockDevices = const [
-    PrinterDevice(
-      id: 'bt_printer_58',
-      name: 'RPP02N 58mm Bluetooth Printer',
-      address: '66:22:BB:11:44:88',
-    ),
-    PrinterDevice(
-      id: 'usb_printer_80',
-      name: 'Epson TM-T82 80mm USB Printer',
-      type: PrinterConnectionType.usb,
-      address: 'USB-PORT-01',
-    ),
-  ];
+  final List<PrinterDevice> mockDevices;
 
   @override
   Future<List<PrinterDevice>> scanDevices({PrinterConnectionType? type}) async {

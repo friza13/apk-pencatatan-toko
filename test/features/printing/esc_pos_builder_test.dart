@@ -84,7 +84,15 @@ void main() {
 
   group('PrinterAdapter Contract & Mock', () {
     test('MockPrinterAdapter records printed bytes and tracks connection state', () async {
-      final adapter = MockPrinterAdapter();
+      final adapter = MockPrinterAdapter(
+        mockDevices: const [
+          PrinterDevice(
+            id: 'dev_1',
+            name: 'Mock BT Printer',
+            address: '11:22:33:44:55:66',
+          ),
+        ],
+      );
       expect(adapter.currentConnectedDevice, isNull);
 
       final devices = await adapter.scanDevices();

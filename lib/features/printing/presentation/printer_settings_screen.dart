@@ -176,11 +176,53 @@ class _PrinterSettingsScreenState extends ConsumerState<PrinterSettingsScreen> {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
-          if (_devices.isEmpty && !_isScanning)
+          if (_isScanning)
             const Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Tidak ada printer terdeteksi. Tekan tombol refresh di atas.'),
+                padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                child: Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 12),
+                      Text('Sedang memindai printer Bluetooth & USB...'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (_devices.isEmpty && !_isScanning)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.print_disabled_outlined,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Belum Ada Printer Terdeteksi',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Nyalakan Bluetooth atau sambungkan kabel USB printer thermal Anda, lalu tekan tombol di bawah untuk memindai.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.tonalIcon(
+                      onPressed: _scan,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Pindai Perangkat'),
+                    ),
+                  ],
+                ),
               ),
             ),
           for (final d in _devices)
