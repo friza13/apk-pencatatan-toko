@@ -51,8 +51,9 @@ class ReceiptTextRenderer {
       if (l.name.length + subtotal.length + 1 <= widthChars) {
         b.writeln(_leftRight(l.name, subtotal));
       } else {
-        b.writeln(l.name);
-        b.writeln(_right(subtotal));
+        b
+          ..writeln(l.name)
+          ..writeln(_right(subtotal));
       }
 
       // Line 2: [Qty] [Unit] X [UnitPrice] (e.g. 75 crt X 44.800)
