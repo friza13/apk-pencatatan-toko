@@ -1,5 +1,8 @@
-import 'dart:typed_data';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'bluetooth_printer_adapter.dart';
 
 /// Connection type of a hardware thermal printer.
 enum PrinterConnectionType { bluetooth, usb, network, mock }
@@ -91,8 +94,13 @@ class MockPrinterAdapter implements PrinterAdapter {
 }
 
 /// Global provider for the active thermal printer adapter.
+/// Uses [BluetoothPrinterAdapter] on real mobile devices (Android/iOS)
+/// and [MockPrinterAdapter] on web, desktop host, or headless tests.
 final printerAdapterProvider = Provider<PrinterAdapter>((ref) {
-  return MockPrinterAdapter();
+  if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+    return MockPrinterAdapter();
+  }
+  return BluetoothPrinterAdapter();
 });
 
 /// Notifier holding the active paper size setting: 58 mm vs 80 mm.

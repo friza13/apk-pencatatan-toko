@@ -80,6 +80,37 @@ void main() {
       expect(rawText, contains('Puri Abadi'));
       expect(rawText, contains('58 mm'));
     });
+
+    test('handles long text exceeding width and non-Latin-1 characters safely', () {
+      final doc = ReceiptDocument(
+        storeName: 'Toko Berkah 😊 (Super)',
+        tagline: 'Kualitas “Terbaik” & Terpercaya — No. 1',
+        invoiceNumber: '#INV-LONG-1234567890',
+        dateTimeLocal: '26/08/2026 14:07',
+        customerName: 'Budi Santoso Sudirman Jaya Kusuma Bangsa',
+        operatorName: 'Kasir Utama 🌟',
+        lines: const [
+          ReceiptItem(
+            name: 'Kopi Susu Gula Aren Spesial Ukuran Besar Dingin Mantap',
+            qty: '10',
+            unit: 'cup',
+            unitPriceMinor: 18000,
+            lineTotalMinor: 180000,
+          ),
+        ],
+        subtotalMinor: 180000,
+        grandTotalMinor: 180000,
+        paidMinor: 200000,
+        changeMinor: 20000,
+        paymentLabel: 'TUNAI',
+        footerNote: 'Terima kasih atas kunjungannya! Semoga harimu menyenangkan 😊',
+      );
+
+      final builder = EscPosBuilder(is80mm: false); // 32 columns
+      expect(() => builder.build(doc), returnsNormally);
+      final bytes = builder.build(doc);
+      expect(bytes, isNotEmpty);
+    });
   });
 
   group('PrinterAdapter Contract & Mock', () {

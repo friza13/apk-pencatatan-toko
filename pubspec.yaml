@@ -57,6 +57,7 @@ dependencies:
   file_picker: ^12.1.0
   crypto: ^3.0.7
   package_info_plus: ^10.2.1
+  print_bluetooth_thermal: ^1.2.4
 
 dev_dependencies:
   flutter_test:

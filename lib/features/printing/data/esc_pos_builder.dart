@@ -24,14 +24,14 @@ class EscPosBuilder {
     _setAlign(buffer, 1);
     _setBold(buffer, true);
     _setTextSize(buffer, widthDouble: true, heightDouble: true);
-    buffer.add(latin1.encode('${document.storeName}\n'));
+    _addText(buffer, '${document.storeName}\n');
     _setTextSize(buffer, widthDouble: false, heightDouble: false);
     _setBold(buffer, false);
 
     if (document.config.showTagline &&
         document.tagline != null &&
         document.tagline!.trim().isNotEmpty) {
-      buffer.add(latin1.encode('${document.tagline!.trim()}\n'));
+      _addText(buffer, '${document.tagline!.trim()}\n');
     }
 
     _setAlign(buffer, 0);
@@ -63,7 +63,7 @@ class EscPosBuilder {
       if (item.name.length + priceStr.length + 1 <= widthChars) {
         _addLeftRight(buffer, item.name, priceStr);
       } else {
-        buffer.add(latin1.encode('${item.name}\n'));
+        _addText(buffer, '${item.name}\n');
         _addRight(buffer, priceStr);
       }
       _setBold(buffer, false);
@@ -72,10 +72,9 @@ class EscPosBuilder {
           item.unit != null && item.unit!.trim().isNotEmpty
               ? ' ${item.unit!.trim()}'
               : '';
-      buffer.add(
-        latin1.encode(
-          '  ${item.qty}$unitPart X ${_group(item.unitPriceMinor)}\n',
-        ),
+      _addText(
+        buffer,
+        '  ${item.qty}$unitPart X ${_group(item.unitPriceMinor)}\n',
       );
 
       if (item.discountMinor > 0) {
@@ -162,13 +161,14 @@ class EscPosBuilder {
     final footer = document.effectiveFooter;
     if (footer.isNotEmpty) {
       _setAlign(buffer, 1);
-      buffer.add(latin1.encode('$footer\n'));
+      _addText(buffer, '$footer\n');
     }
 
     if (document.config.showSignature) {
       _setAlign(buffer, 1);
-      buffer.add(
-        latin1.encode('\nTanda Tangan / Stempel\n\n\n(....................)\n'),
+      _addText(
+        buffer,
+        '\nTanda Tangan / Stempel\n\n\n(....................)\n',
       );
     }
 
@@ -193,15 +193,12 @@ class EscPosBuilder {
     final buffer = BytesBuilder()..add([_esc, 0x40]); // Init
     _setAlign(buffer, 1);
     _setBold(buffer, true);
-    buffer
-      ..add(latin1.encode('TEST PRINT NOTAKIT\n'))
-      ..add(latin1.encode('$storeName\n'))
-      ..add(latin1.encode('Printer Mode: ${is80mm ? '80 mm' : '58 mm'}\n'));
+    _addText(buffer, 'TEST PRINT NOTAKIT\n');
+    _addText(buffer, '$storeName\n');
+    _addText(buffer, 'Printer Mode: ${is80mm ? '80 mm' : '58 mm'}\n');
     _setBold(buffer, false);
     _addDivider(buffer);
-    buffer.add(
-      latin1.encode('Printer thermal Bluetooth/USB siap digunakan!\n'),
-    );
+    _addText(buffer, 'Printer thermal Bluetooth/USB siap digunakan!\n');
     _addDivider(buffer);
     buffer
       ..add([_esc, 0x64, 0x03]) // Feed 3
@@ -211,6 +208,22 @@ class EscPosBuilder {
   }
 
   // ---------- Helpers ----------
+
+  static String _sanitizeLatin1(String text) {
+    return text
+        .replaceAll('…', '...')
+        .replaceAll('’', "'")
+        .replaceAll('‘', "'")
+        .replaceAll('”', '"')
+        .replaceAll('“', '"')
+        .replaceAll('–', '-')
+        .replaceAll('—', '-')
+        .replaceAll(RegExp(r'[^\x00-\xFF]'), '');
+  }
+
+  void _addText(BytesBuilder buffer, String text) {
+    buffer.add(latin1.encode(_sanitizeLatin1(text)));
+  }
 
   void _setAlign(BytesBuilder buffer, int align) {
     // 0 = Left, 1 = Center, 2 = Right
@@ -234,33 +247,32 @@ class EscPosBuilder {
 
   void _addDivider(BytesBuilder buffer) {
     _setAlign(buffer, 0);
-    buffer.add(latin1.encode('${'-' * widthChars}\n'));
+    _addText(buffer, '${'-' * widthChars}\n');
   }
 
   void _addRight(BytesBuilder buffer, String text) {
-    if (text.length >= widthChars) {
-      buffer.add(latin1.encode('$text\n'));
+    final clean = _sanitizeLatin1(text);
+    if (clean.length >= widthChars) {
+      _addText(buffer, '$clean\n');
       return;
     }
-    final spaces = widthChars - text.length;
-    buffer.add(latin1.encode('${' ' * spaces}$text\n'));
+    final spaces = widthChars - clean.length;
+    _addText(buffer, '${' ' * spaces}$clean\n');
   }
 
   void _addLeftRight(BytesBuilder buffer, String left, String right) {
-    var l = left;
-    final r = right;
+    var l = _sanitizeLatin1(left);
+    final r = _sanitizeLatin1(right);
     if (l.length + r.length >= widthChars) {
-      final available = widthChars - r.length - 2;
+      final available = widthChars - r.length - 4;
       if (available > 0) {
-        l = '${l.substring(0, available)}…';
+        l = '${l.substring(0, available)}...';
       } else {
         l = l.substring(0, (widthChars - r.length - 1).clamp(0, l.length));
       }
     }
     final spaces = widthChars - l.length - r.length;
-    buffer.add(
-      latin1.encode('$l${' ' * (spaces > 0 ? spaces : 1)}$r\n'),
-    );
+    _addText(buffer, '$l${' ' * (spaces > 0 ? spaces : 1)}$r\n');
   }
 
   void _addQrCode(BytesBuilder buffer, String data) {
@@ -276,7 +288,7 @@ class EscPosBuilder {
       ..add([_gs, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30])
       ..add([_gs, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30, ...bytes])
       ..add([_gs, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30])
-      ..add(latin1.encode('\n'));
+      ..add(const [0x0A]);
   }
 
   static String _money(int amount, String symbol) => '$symbol${_group(amount)}';

@@ -26,6 +26,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
   final _search = TextEditingController();
   List<Product> _results = [];
   bool _searching = false;
+  bool _isSheetOpen = false;
 
   @override
   void dispose() {
@@ -50,6 +51,11 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
   }
 
   Future<void> _handleBarcodeScanned(String barcode) async {
+    _search.clear();
+    setState(() {
+      _results = [];
+      _searching = false;
+    });
     final business = await ref.read(currentBusinessProvider.future);
     final repo = await ref.read(productRepositoryProvider.future);
     final items = await repo.search(
@@ -94,8 +100,10 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
       return;
     }
 
-    await showModalBottomSheet<void>(
-      context: context,
+    setState(() => _isSheetOpen = true);
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
       isScrollControlled: true,
       builder: (sheetCtx) => SafeArea(
         child: Padding(
@@ -226,6 +234,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
         ),
       ),
     );
+    } finally {
+      if (mounted) setState(() => _isSheetOpen = false);
+    }
   }
 
   Future<void> _checkout() async {
@@ -259,8 +270,11 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     final paidC = TextEditingController(text: '$resolvedTotal');
     if (!mounted) return;
 
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
+    setState(() => _isSheetOpen = true);
+    bool? confirmed;
+    try {
+      confirmed = await showModalBottomSheet<bool>(
+        context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) => Padding(
@@ -373,6 +387,9 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
         ),
       ),
     );
+    } finally {
+      if (mounted) setState(() => _isSheetOpen = false);
+    }
     if (confirmed != true || !mounted) return;
 
     final paidNow =
@@ -393,22 +410,27 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
         ..invalidate(productsControllerProvider)
         ..invalidate(salesListProvider);
       if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (dialogCtx) => AlertDialog(
-          title: const Text('Nota tersimpan'),
-          content: Text(
-            'Nomor: ${out.number}\nTotal: ${formatMinor(out.grandTotalMinor)}'
-            '${out.dueTotalMinor > 0 ? '\nPiutang: ${formatMinor(out.dueTotalMinor)}' : ''}',
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: const Text('OK'),
+      setState(() => _isSheetOpen = true);
+      try {
+        await showDialog<void>(
+          context: context,
+          builder: (dialogCtx) => AlertDialog(
+            title: const Text('Nota tersimpan'),
+            content: Text(
+              'Nomor: ${out.number}\nTotal: ${formatMinor(out.grandTotalMinor)}'
+              '${out.dueTotalMinor > 0 ? '\nPiutang: ${formatMinor(out.dueTotalMinor)}' : ''}',
             ),
-          ],
-        ),
-      );
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isSheetOpen = false);
+      }
       if (mounted) context.go('/sales');
     } on Failure catch (f) {
       if (!mounted) return;
@@ -424,6 +446,7 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Buat Nota')),
       body: BarcodeScannerListener(
+        enabled: !_isSheetOpen,
         onBarcodeScanned: _handleBarcodeScanned,
         child: Column(
           children: [
