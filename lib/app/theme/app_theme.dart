@@ -103,8 +103,26 @@ abstract final class AppTheme {
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: AppRadius.full),
-        labelStyle: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        backgroundColor:
+            isDark ? AppColors.darkSurfaceElevated : AppColors.neutral100,
+        selectedColor: isDark ? AppColors.primary800 : AppColors.primary100,
+        side: BorderSide(
+          color: isDark ? AppColors.darkDivider : AppColors.neutral300,
+        ),
+        labelStyle: AppTypography.caption.copyWith(
+          color: isDark ? AppColors.darkTextPrimary : AppColors.neutral800,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: AppTypography.caption.copyWith(
+          color: isDark ? AppColors.primary50 : AppColors.primary900,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: IconThemeData(
+          color: isDark ? AppColors.darkTextPrimary : AppColors.neutral700,
+          size: 18,
+        ),
+        checkmarkColor: isDark ? AppColors.primary50 : AppColors.primary900,
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
