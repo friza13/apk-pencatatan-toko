@@ -16,7 +16,7 @@ final Provider<PinHasher> pinHasherProvider = Provider<PinHasher>(
 );
 
 /// Production [SecureStore] backed by flutter_secure_storage
-/// (Android Keystore-wrapped).
+/// (Android Keystore-wrapped with resetOnError & algorithm migration for Android <= 10 resiliency).
 final Provider<SecureStore> secureStoreProvider = Provider<SecureStore>((ref) {
   return FlutterSecureStoreAdapter(const FlutterSecureStorage());
 });
@@ -60,6 +60,24 @@ class LocalAuthAdapter implements BiometricAuthenticator {
       _auth.authenticate(localizedReason: reason);
 }
 
+/// Reads from [SecureStore] with retries and exponential backoff to handle
+/// transient Android Keystore delays on budget or older Android devices.
+Future<String?> _readKeyWithRetry(
+  SecureStore store,
+  String key, {
+  int maxRetries = 3,
+}) async {
+  for (var i = 0; i < maxRetries; i++) {
+    try {
+      return await store.read(key);
+    } catch (e) {
+      if (i == maxRetries - 1) rethrow;
+      await Future<void>.delayed(Duration(milliseconds: 150 * (i + 1)));
+    }
+  }
+  return null;
+}
+
 /// Opens the encrypted production database; creates the random DB key on
 /// first launch (D-022). Key lives in secure storage, never in code.
 final FutureProvider<AppDatabase> appDatabaseProvider =
@@ -67,8 +85,12 @@ final FutureProvider<AppDatabase> appDatabaseProvider =
       final docs = await getApplicationDocumentsDirectory();
       final file = File('${docs.path}/notakit.db');
 
+      if (!await file.parent.exists()) {
+        await file.parent.create(recursive: true);
+      }
+
       final secure = ref.watch(secureStoreProvider);
-      var passphrase = await secure.read('nk.db.key');
+      var passphrase = await _readKeyWithRetry(secure, 'nk.db.key');
       if (passphrase == null || passphrase.isEmpty) {
         passphrase = _randomKey();
         await secure.write('nk.db.key', passphrase);

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/security/auth_controller.dart';
 import '../features/security/lock_screen.dart';
+import '../features/security/providers.dart';
 
 /// Gates the main app behind onboarding / lock based on [AuthPhase].
 class AuthGate extends ConsumerWidget {
@@ -20,8 +21,14 @@ class AuthGate extends ConsumerWidget {
       loading: () => const _Splash(),
       error: (e, _) => _Splash(
         message:
-            'Terjadi kesalahan saat memuat data. '
-            'Periksa penyimpanan lalu buka ulang aplikasi.',
+            'Terjadi kesalahan saat memuat data toko. '
+            'Pastikan penyimpanan perangkat tersedia dan coba lagi.',
+        errorDetails: e.toString(),
+        onRetry: () {
+          ref
+            ..invalidate(appDatabaseProvider)
+            ..invalidate(authControllerProvider);
+        },
       ),
       data: (auth) {
         // Gated screens live outside the app's Navigator, so they carry
@@ -46,10 +53,23 @@ class AuthGate extends ConsumerWidget {
   }
 }
 
-class _Splash extends StatelessWidget {
-  const _Splash({this.message});
+class _Splash extends StatefulWidget {
+  const _Splash({
+    this.message,
+    this.errorDetails,
+    this.onRetry,
+  });
 
   final String? message;
+  final String? errorDetails;
+  final VoidCallback? onRetry;
+
+  @override
+  State<_Splash> createState() => _SplashState();
+}
+
+class _SplashState extends State<_Splash> {
+  bool _showDetails = false;
 
   @override
   Widget build(BuildContext context) {
@@ -57,8 +77,8 @@ class _Splash extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -90,7 +110,7 @@ class _Splash extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-                if (message == null) ...[
+                if (widget.message == null) ...[
                   SizedBox(
                     width: 140,
                     child: LinearProgressIndicator(
@@ -106,14 +126,72 @@ class _Splash extends StatelessWidget {
                   Icon(
                     Icons.error_outline,
                     color: theme.colorScheme.error,
-                    size: 32,
+                    size: 36,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Text(
-                    message!,
+                    widget.message!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
+                  if (widget.onRetry != null) ...[
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(180, 48),
+                      ),
+                      onPressed: widget.onRetry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Coba Lagi'),
+                    ),
+                  ],
+                  if (widget.errorDetails != null &&
+                      widget.errorDetails!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () {
+                        setState(() => _showDetails = !_showDetails);
+                      },
+                      icon: Icon(
+                        _showDetails
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        size: 18,
+                      ),
+                      label: Text(
+                        _showDetails
+                            ? 'Sembunyikan Detail Kesalahan'
+                            : 'Lihat Detail Kesalahan',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    if (_showDetails)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                        constraints: const BoxConstraints(maxHeight: 160),
+                        child: SingleChildScrollView(
+                          child: SelectableText(
+                            widget.errorDetails!,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ],
               ],
             ),
