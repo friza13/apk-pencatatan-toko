@@ -7,11 +7,13 @@ abstract final class AppRadius {
   static const double largeValue = 16;
   static const double extraValue = 20;
   static const double bottomSheetTopValue = 24;
+  static const double fullValue = 999;
 
   static final BorderRadius small = BorderRadius.circular(smallValue);
   static final BorderRadius medium = BorderRadius.circular(mediumValue);
   static final BorderRadius large = BorderRadius.circular(largeValue);
   static final BorderRadius extra = BorderRadius.circular(extraValue);
+  static final BorderRadius full = BorderRadius.circular(fullValue);
   static final BorderRadius bottomSheetTop = BorderRadius.vertical(
     top: Radius.circular(bottomSheetTopValue),
   );

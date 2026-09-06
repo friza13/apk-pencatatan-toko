@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 
+import '../../../app/theme/app_colors.dart';
 import '../../../core/units/quantity.dart';
 import '../../../database/app_database.dart';
 import '../data/esc_pos_builder.dart';
@@ -129,35 +130,96 @@ class _PrintSheetState extends ConsumerState<PrintSheet> {
   @override
   Widget build(BuildContext context) {
     final text = _text;
+    final adapter = ref.watch(printerAdapterProvider);
+    final connected = adapter.currentConnectedDevice;
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Cetak Nota', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: false, label: Text('58 mm')),
-              ButtonSegment(value: true, label: Text('80 mm')),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Cetak Nota', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('58 mm')),
+                  ButtonSegment(value: true, label: Text('80 mm')),
+                ],
+                selected: {_is80},
+                onSelectionChanged: (s) => setState(() => _is80 = s.first),
+              ),
             ],
-            selected: {_is80},
-            onSelectionChanged: (s) => setState(() => _is80 = s.first),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: connected != null
+                  ? AppColors.accent50
+                  : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: connected != null
+                    ? AppColors.accent500
+                    : Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  connected != null ? Icons.bluetooth_connected : Icons.print_outlined,
+                  size: 18,
+                  color: connected != null
+                      ? AppColors.accent700
+                      : Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    connected != null
+                        ? 'Thermal: ${connected.name}'
+                        : 'Belum terhubung printer thermal (Cetak sistem aktif)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: connected != null
+                          ? AppColors.accent700
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
           Container(
             constraints: const BoxConstraints(maxHeight: 260),
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: SingleChildScrollView(
               child: SelectableText(
                 text,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: Color(0xFF1E293B),
+                ),
               ),
             ),
           ),

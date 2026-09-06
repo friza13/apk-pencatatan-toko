@@ -64,4 +64,33 @@ abstract final class AppTypography {
     fontWeight: FontWeight.w500,
     fontFamily: fontFamily,
   );
+
+  /// Tabular numbers for financial alignment in cashier POS and bookkeeping.
+  static const List<FontFeature> tabularFigures = [
+    FontFeature.tabularFigures(),
+  ];
+
+  static const TextStyle numberDisplay = TextStyle(
+    fontSize: 28,
+    height: 34 / 28,
+    fontWeight: FontWeight.w700,
+    fontFamily: fontFamily,
+    fontFeatures: tabularFigures,
+  );
+
+  static const TextStyle numberLarge = TextStyle(
+    fontSize: 20,
+    height: 26 / 20,
+    fontWeight: FontWeight.w700,
+    fontFamily: fontFamily,
+    fontFeatures: tabularFigures,
+  );
+
+  static const TextStyle numberMedium = TextStyle(
+    fontSize: 16,
+    height: 22 / 16,
+    fontWeight: FontWeight.w600,
+    fontFamily: fontFamily,
+    fontFeatures: tabularFigures,
+  );
 }

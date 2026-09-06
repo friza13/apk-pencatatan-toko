@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:drift/drift.dart' show OrderingTerm;
 
+import '../../../app/theme/app_colors.dart';
+import '../../../app/theme/app_typography.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/money/money.dart';
 import '../../../core/units/quantity.dart';
@@ -277,63 +279,166 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
         context: context,
       isScrollControlled: true,
       builder: (sheetContext) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Pembayaran',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                resolvedTotal == null
-                    ? 'Total: menghitung...'
-                    : 'Total: ${formatMinor(resolvedTotal!)}',
-                style: Theme.of(sheetContext).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: paidC,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Dibayar sekarang',
-                ),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  ActionChip(
-                    label: const Text('Uang Pas'),
-                    onPressed: () {
-                      if (resolvedTotal != null) {
-                        paidC.text = '$resolvedTotal';
-                        setSheetState(() {});
-                      }
-                    },
+        builder: (sheetContext, setSheetState) {
+          final int enteredPaid =
+              int.tryParse(paidC.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+          final int targetTotal = resolvedTotal ?? 0;
+          final int change = enteredPaid - targetTotal;
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(sheetContext).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                  for (final amount in [10000, 20000, 50000, 100000])
-                    if ((resolvedTotal ?? 0) <= amount)
-                      ActionChip(
-                        label: Text(formatMinor(amount)),
-                        onPressed: () {
-                          paidC.text = '$amount';
-                          setSheetState(() {});
-                        },
+                ),
+                Text(
+                  'Pembayaran',
+                  style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  resolvedTotal == null
+                      ? 'Total: menghitung...'
+                      : 'Total Tagihan: ${formatMinor(resolvedTotal!)}',
+                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: AppTypography.tabularFigures,
+                  ),
+                ),
+                if (resolvedTotal != null && enteredPaid > 0) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: change >= 0
+                          ? AppColors.accent50
+                          : AppColors.danger50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: change >= 0
+                            ? AppColors.accent500
+                            : AppColors.danger500,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          change >= 0 ? 'Kembalian:' : 'Sisa (Piutang):',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: change >= 0
+                                ? AppColors.accent700
+                                : AppColors.danger700,
+                          ),
+                        ),
+                        Text(
+                          formatMinor(change.abs()),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: change >= 0
+                                ? AppColors.accent700
+                                : AppColors.danger700,
+                            fontFeatures: AppTypography.tabularFigures,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              ),
-              const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: paidC,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => setSheetState(() {}),
+                  decoration: InputDecoration(
+                    labelText: 'Nominal Bayar (Rp)',
+                    suffixIcon: paidC.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 20),
+                            onPressed: () {
+                              paidC.clear();
+                              setSheetState(() {});
+                            },
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ActionChip(
+                      avatar: const Icon(Icons.check_circle, size: 16),
+                      label: const Text('Uang Pas'),
+                      onPressed: () {
+                        if (resolvedTotal != null) {
+                          paidC.text = '$resolvedTotal';
+                          setSheetState(() {});
+                        }
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('+Rp10.000'),
+                      onPressed: () {
+                        final cur = int.tryParse(
+                                paidC.text.replaceAll(RegExp(r'[^0-9]'), '')) ??
+                            0;
+                        paidC.text = '${cur + 10000}';
+                        setSheetState(() {});
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('+Rp20.000'),
+                      onPressed: () {
+                        final cur = int.tryParse(
+                                paidC.text.replaceAll(RegExp(r'[^0-9]'), '')) ??
+                            0;
+                        paidC.text = '${cur + 20000}';
+                        setSheetState(() {});
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('Rp50.000'),
+                      onPressed: () {
+                        paidC.text = '50000';
+                        setSheetState(() {});
+                      },
+                    ),
+                    ActionChip(
+                      label: const Text('Rp100.000'),
+                      onPressed: () {
+                        paidC.text = '100000';
+                        setSheetState(() {});
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
               Text(
                 'Kurang dari total akan dicatat sebagai piutang.',
                 style: Theme.of(sheetContext).textTheme.bodySmall,
@@ -384,12 +489,13 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-    } finally {
-      if (mounted) setState(() => _isSheetOpen = false);
-    }
+        );
+      },
+    ),
+  );
+  } finally {
+    if (mounted) setState(() => _isSheetOpen = false);
+  }
     if (confirmed != true || !mounted) return;
 
     final paidNow =
@@ -454,13 +560,25 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: TextField(
                 controller: _search,
-                autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Cari produk untuk ditambahkan...',
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _search.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: () {
+                            _search.clear();
+                            setState(() {
+                              _results = [];
+                              _searching = false;
+                            });
+                          },
+                        )
+                      : null,
                 ),
                 onSubmitted: _runSearch,
                 onChanged: (v) {
+                  setState(() {});
                   if (v.length >= 2) _runSearch(v);
                 },
               ),
@@ -475,8 +593,17 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                     for (final p in _results)
                       ListTile(
                         dense: true,
-                        title: Text(p.name),
-                        subtitle: Text(formatMinor(p.salePriceMinor)),
+                        title: Text(
+                          p.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          formatMinor(p.salePriceMinor),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         trailing: Icon(
                           Icons.add_circle_outline,
                           color: Theme.of(context).colorScheme.primary,
@@ -501,37 +628,90 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
                           const SizedBox(height: 12),
                           const Text(
                             'Cari produk di atas,\nlalu ketuk untuk menambah.',
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     )
                   : ListView(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       children: [
                         for (final l in cart.lines)
                           ListTile(
-                            title: Text(l.displayName),
+                            title: Text(
+                              l.displayName,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
+                            ),
                             subtitle: Text(
                               '${microToDecimalString(l.qtyMicro)} x '
                               '${formatMinor(l.unitPriceMinor)}'
                               '${l.tracked ? '' : ' (jasa)'}',
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  onPressed: () => ref
-                                      .read(cartProvider.notifier)
-                                      .decrementByKey(l.cartKey),
-                                  icon: const Icon(Icons.remove_circle_outline),
+                            trailing: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant,
                                 ),
-                                Text(microToDecimalString(l.qtyMicro)),
-                                IconButton(
-                                  onPressed: () => ref
-                                      .read(cartProvider.notifier)
-                                      .incrementByKey(l.cartKey),
-                                  icon: const Icon(Icons.add_circle_outline),
-                                ),
-                              ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    constraints: const BoxConstraints(
+                                      minWidth: 44,
+                                      minHeight: 44,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () => ref
+                                        .read(cartProvider.notifier)
+                                        .decrementByKey(l.cartKey),
+                                    icon: Icon(
+                                      l.qtyMicro <= quantityScale
+                                          ? Icons.delete_outline
+                                          : Icons.remove,
+                                      size: 18,
+                                      color: l.qtyMicro <= quantityScale
+                                          ? Theme.of(context).colorScheme.error
+                                          : null,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6),
+                                    child: Text(
+                                      microToDecimalString(l.qtyMicro),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    constraints: const BoxConstraints(
+                                      minWidth: 44,
+                                      minHeight: 44,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () => ref
+                                        .read(cartProvider.notifier)
+                                        .incrementByKey(l.cartKey),
+                                    icon: const Icon(Icons.add, size: 18),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                       ],
@@ -540,22 +720,38 @@ class _NewSaleScreenState extends ConsumerState<NewSaleScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(56),
-              backgroundColor: cart.isEmpty
-                  ? Theme.of(context).disabledColor
-                  : null,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
             ),
-            onPressed: cart.isEmpty ? null : _checkout,
-            child: Text(
-              cart.isEmpty
-                  ? 'Keranjang kosong'
-                  : 'Bayar - ${formatMinor(cart.subtotalMinor)}',
-              style: const TextStyle(fontSize: 18),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+                backgroundColor: cart.isEmpty
+                    ? Theme.of(context).disabledColor
+                    : Theme.of(context).colorScheme.primary,
+              ),
+              onPressed: cart.isEmpty ? null : _checkout,
+              icon: const Icon(Icons.shopping_bag_outlined),
+              label: Text(
+                cart.isEmpty
+                    ? 'Keranjang kosong'
+                    : 'Bayar - ${formatMinor(cart.subtotalMinor)}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ),
